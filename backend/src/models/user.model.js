@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
-const { Schema, Types } = mongoose;
+import { Schema, model } from "mongoose";
+import bcrypt from "bcrypt";
 
-const UserSchema = new Schema(
+const userSchema = new Schema(
   {
     username: {
       type: String,
@@ -15,6 +15,7 @@ const UserSchema = new Schema(
       required: [true, "Email is required"],
       unique: true,
       trim: true,
+      length: { max: 50 },
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
     },
@@ -22,9 +23,11 @@ const UserSchema = new Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: 6,
+      select: false,
     },
     role: {
       type: String,
+      required: true,
       enum: ["admin", "user"],
       default: "user",
     },
@@ -34,6 +37,17 @@ const UserSchema = new Schema(
   }
 );
 
-const UserModel = mongoose.model("User", UserSchema);
+userSchema.pre("save", async function (next) {
+  // Chỉ hash mật khẩu nếu nó được thay đổi (hoặc là user mới)
+  if (!this.isModified("password")) {
+    return next();
+  }
 
-export default UserModel;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+const User = model("User", userSchema);
+
+export default User;
