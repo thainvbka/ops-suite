@@ -3,6 +3,8 @@ import Token from "../models/token.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import config from "../config/index.js";
 import bcrypt from "bcrypt";
+import { verifyRefreshToken } from "../utils/jwt.js";
+
 export const register = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
@@ -101,6 +103,76 @@ export const login = async (req, res) => {
         role: user.role,
       },
       accessToken: accessToken,
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: "Server Error",
+      message: "Internal server error",
+      error: error,
+    });
+    console.log(error);
+  }
+};
+
+export const refreshToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        code: "Bad Request",
+        message: "No refresh token provided",
+      });
+    }
+
+    const storedToken = await Token.findOne({ token: refreshToken });
+
+    if (!storedToken) {
+      return res.status(403).json({
+        code: "Forbidden",
+        message: "Invalid refresh token",
+      });
+    }
+
+    //verify token
+    const payload = verifyRefreshToken(refreshToken);
+
+    const accessToken = generateAccessToken(payload.userId);
+
+    res.status(200).json({
+      accessToken: accessToken,
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: "Server Error",
+      message: "Internal server error",
+      error: error,
+    });
+    console.log(error);
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        code: "Bad Request",
+        message: "No refresh token provided",
+      });
+    }
+
+    await Token.findOneAndDelete({ token: refreshToken });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      message: "Logged out successfully",
     });
   } catch (error) {
     res.status(500).json({

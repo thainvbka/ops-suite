@@ -1,8 +1,13 @@
 import Router from "express";
-import { register, login } from "../controllers/auth.controller.js";
+import {
+  register,
+  login,
+  logout,
+  refreshToken,
+} from "../controllers/auth.controller.js";
 import { body } from "express-validator";
 import validationError from "../middlewares/validation.error.js";
-import User from "../models/user.model.js";
+import authenticate from "../middlewares/authenticate.js";
 
 const router = Router();
 
@@ -62,5 +67,9 @@ router.post(
   validationError,
   login
 );
+
+router.post("/refresh-token", refreshToken);
+
+router.post("/logout", authenticate, logout);
 
 export default router;
