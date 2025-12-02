@@ -1,5 +1,3 @@
--- Database Schema for Grafana Clone
-
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -61,7 +59,24 @@ CREATE TABLE IF NOT EXISTS datasources (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+<<<<<<< ours
+=======
 -- Variables table
+CREATE TABLE IF NOT EXISTS variables (
+    id SERIAL PRIMARY KEY,
+    dashboard_id INTEGER REFERENCES dashboards(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    query TEXT,
+    datasource VARCHAR(255),
+    options JSONB,
+    current JSONB,
+    multi BOOLEAN DEFAULT FALSE,
+    include_all BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+>>>>>>> theirs
 -- Alerts table
 CREATE TABLE IF NOT EXISTS alerts (
     id SERIAL PRIMARY KEY,
@@ -90,6 +105,20 @@ CREATE TABLE IF NOT EXISTS alert_history (
 );
 
 -- Templates table
+CREATE TABLE IF NOT EXISTS templates (
+    id SERIAL PRIMARY KEY,
+    uid VARCHAR(40) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+    tags TEXT[],
+    dashboard_data JSONB,
+    preview_image TEXT,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    downloads INTEGER DEFAULT 0
+);
+
 -- Sessions table
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
@@ -100,6 +129,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- API Keys table
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    key_hash VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    last_used TIMESTAMP
+);
+
 -- Metrics table (for PostgreSQL datasource)
 CREATE TABLE IF NOT EXISTS metrics (
     id SERIAL PRIMARY KEY,
@@ -115,6 +155,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 CREATE INDEX IF NOT EXISTS idx_dashboards_created_by ON dashboards(created_by);
 CREATE INDEX IF NOT EXISTS idx_dashboards_uid ON dashboards(uid);
 CREATE INDEX IF NOT EXISTS idx_panels_dashboard_id ON panels(dashboard_id);
+CREATE INDEX IF NOT EXISTS idx_variables_dashboard_id ON variables(dashboard_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_dashboard_id ON alerts(dashboard_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
