@@ -59,8 +59,6 @@ CREATE TABLE IF NOT EXISTS datasources (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-<<<<<<< ours
-=======
 -- Variables table
 CREATE TABLE IF NOT EXISTS variables (
     id SERIAL PRIMARY KEY,
@@ -76,7 +74,6 @@ CREATE TABLE IF NOT EXISTS variables (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
->>>>>>> theirs
 -- Alerts table
 CREATE TABLE IF NOT EXISTS alerts (
     id SERIAL PRIMARY KEY,
