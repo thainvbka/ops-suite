@@ -9,6 +9,8 @@ const { runMigrations } = require("./services/migrationService");
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboards");
 const alertRoutes = require("./routes/alerts");
+const panelRoutes = require("./routes/panels");
+const logRoutes = require("./routes/logs");
 
 const app = express();
 
@@ -19,6 +21,8 @@ setupLogger();
 app.use(cors());
 app.use(express.json());
 
+//init data source manager
+
 // Run migrations
 runMigrations();
 
@@ -26,6 +30,8 @@ runMigrations();
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboards", dashboardRoutes);
 app.use("/api/alerts", alertRoutes);
+app.use("/api/panels", panelRoutes);
+app.use("/api/logs", logRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
