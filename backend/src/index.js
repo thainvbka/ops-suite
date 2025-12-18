@@ -12,6 +12,7 @@ const dashboardRoutes = require("./routes/dashboards");
 const alertRoutes = require("./routes/alerts");
 const panelRoutes = require("./routes/panels");
 const logRoutes = require("./routes/logs");
+const datasourceRoutes = require("./routes/datasources");
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/dashboards", dashboardRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/panels", panelRoutes);
 app.use("/api/logs", logRoutes);
+app.use("/api/datasources", datasourceRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
