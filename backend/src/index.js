@@ -13,6 +13,7 @@ const alertRoutes = require("./routes/alerts");
 const panelRoutes = require("./routes/panels");
 const logRoutes = require("./routes/logs");
 const datasourceRoutes = require("./routes/datasources");
+const metricRoutes = require("./routes/metrics");
 
 const app = express();
 
@@ -35,6 +36,21 @@ app.use("/api/alerts", alertRoutes);
 app.use("/api/panels", panelRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/datasources", datasourceRoutes);
+app.use("/api", metricRoutes);
+
+//health check endpoint
+app.get("/health", async (req, res) => {
+  const connections = await dataSourceManager.testConnections();
+
+  res.json({
+    status: "OK",
+    message: "Backend is running",
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    database: "connected",
+    datasources: connections,
+  });
+});
 
 // Error handling
 app.use((err, req, res, next) => {
