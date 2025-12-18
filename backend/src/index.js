@@ -4,6 +4,7 @@ const { PORT } = require("./config/env");
 const pool = require("./config/db");
 const { setupLogger } = require("./utils/logger");
 const { runMigrations } = require("./services/migrationService");
+const { evaluateAllAlerts } = require("./services/alertService");
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -50,6 +51,9 @@ app.listen(PORT, "0.0.0.0", () => {
   Data Sources: Prometheus, PostgreSQL, Mock
   `);
 });
+
+// Start alert evaluator loop
+setInterval(evaluateAllAlerts, 30000);
 
 // Cleanup on shutdown
 process.on("SIGTERM", async () => {
