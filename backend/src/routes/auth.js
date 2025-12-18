@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const { JWT_SECRET } = require("../config/env");
 const authenticateToken = require("../middleware/auth");
-const dataSourceManager = require("../datasources/manager");
+const dataSourceManager = require("../datasource/manager");
 
 const router = express.Router();
 
