@@ -1,5 +1,5 @@
 const pool = require("../config/db");
-const dataSourceManager = require("../datasources/manager");
+const dataSourceManager = require("../datasource/manager");
 const { extractLatestValue, evaluateCondition } = require("../utils/helpers");
 
 const evaluateAlert = async (alert) => {

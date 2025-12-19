@@ -1,6 +1,6 @@
 const express = require("express");
 const authenticateToken = require("../middleware/auth");
-const dataSourceManager = require("../datasources/manager");
+const dataSourceManager = require("../datasource/manager");
 
 const router = express.Router();
 
