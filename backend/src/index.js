@@ -4,6 +4,7 @@ const { PORT } = require("./config/env");
 const pool = require("./config/db");
 const { setupLogger } = require("./utils/logger");
 const { runMigrations } = require("./services/migrationService");
+const { evaluateAllAlerts } = require("./services/alertService");
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -11,6 +12,8 @@ const dashboardRoutes = require("./routes/dashboards");
 const alertRoutes = require("./routes/alerts");
 const panelRoutes = require("./routes/panels");
 const logRoutes = require("./routes/logs");
+const datasourceRoutes = require("./routes/datasources");
+const metricRoutes = require("./routes/metrics");
 
 const app = express();
 
@@ -32,6 +35,22 @@ app.use("/api/dashboards", dashboardRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/panels", panelRoutes);
 app.use("/api/logs", logRoutes);
+app.use("/api/datasources", datasourceRoutes);
+app.use("/api", metricRoutes);
+
+//health check endpoint
+app.get("/health", async (req, res) => {
+  const connections = await dataSourceManager.testConnections();
+
+  res.json({
+    status: "OK",
+    message: "Backend is running",
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    database: "connected",
+    datasources: connections,
+  });
+});
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -50,6 +69,9 @@ app.listen(PORT, "0.0.0.0", () => {
   Data Sources: Prometheus, PostgreSQL, Mock
   `);
 });
+
+// Start alert evaluator loop
+setInterval(evaluateAllAlerts, 30000);
 
 // Cleanup on shutdown
 process.on("SIGTERM", async () => {
