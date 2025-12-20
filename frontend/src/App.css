@@ -94,6 +94,7 @@
 .login-logo {
   width: 32px;
   height: 32px;
+  margin-bottom: -5px;
 }
 .login-box {
   width: 100%;
@@ -168,3 +169,230 @@
   color: #10b981;
   font-size: 12px;
 }
+
+/* account */
+.navbar-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.account-wrapper {
+  position: relative;
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: 42px;
+  background: #1f1f23;
+  border: 1px solid #2c2c2f;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  border-radius: 10px;
+  min-width: 240px;
+  z-index: 30;
+  padding: 10px;
+}
+
+.account-menu-header {
+  padding: 8px;
+  border-bottom: 1px solid #2c2c2f;
+  margin-bottom: 8px;
+}
+
+.account-name {
+  font-weight: 700;
+}
+
+.account-email {
+  color: #9b9b9b;
+  font-size: 12px;
+}
+
+.account-menu-item {
+  width: 100%;
+  text-align: left;
+  background: #2c2c2f;
+  border: 1px solid #3c3c3f;
+  padding: 10px 12px;
+  color: #d8d9da;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.account-menu-item:hover {
+  background: #343842;
+}
+  
+  .nav-btn {
+    background: none;
+    border: none;
+    color: #d8d9da;
+    font-size: 20px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .nav-btn:hover {
+    background: #2c2c2f;
+  }
+  
+  .refresh-select {
+    padding: 6px 10px;
+    background: #2c2c2f;
+    border: 1px solid #3c3c3f;
+    border-radius: 4px;
+    color: #d8d9da;
+    font-size: 13px;
+  }
+
+  /* Query Editor Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  overflow: hidden;
+}
+
+.query-editor-modal {
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    background: #1f1f23;
+    border: 1px solid #2c2c2f;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #2c2c2f;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px;
+    color: #fff;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: #9b9b9b;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 4px 8px;
+  }
+  
+  .close-btn:hover {
+    color: #d8d9da;
+  }
+  
+  .modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .editor-section {
+    margin-bottom: 20px;
+  }
+  .inline-actions {
+  margin-top: 8px;
+  display: flex;
+}
+  .inline-actions .btn {
+    min-width: 90px;
+  }
+
+  
+  .editor-section h4 {
+    font-size: 14px;
+    color: #9b9b9b;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  
+  .editor-select {
+    width: 100%;
+    padding: 10px;
+    background: #2c2c2f;
+    border: 1px solid #3c3c3f;
+    border-radius: 4px;
+    color: #d8d9da;
+    font-size: 14px;
+  }
+  
+  .query-textarea {
+    width: 100%;
+    padding: 12px;
+    background: #2c2c2f;
+    border: 1px solid #3c3c3f;
+    border-radius: 4px;
+    color: #d8d9da;
+    font-size: 14px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    resize: vertical;
+  }
+  
+  .editor-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .query-results {
+    max-height: 300px;
+    overflow: auto;
+    background: #0b0c0e;
+    border: 1px solid #2c2c2f;
+    border-radius: 4px;
+    padding: 15px;
+  }
+  
+  .query-results pre {
+    color: #d8d9da;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #2c2c2f;
+  }  
+ .modal-subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #9b9b9b;
+}
+
+/* Buttons */
+.btn-primary {
+  width: 100%; padding: 10px; background: #3b82f6; border: none; border-radius: 4px;
+  color: white; font-weight: 500; cursor: pointer; margin-bottom: 15px;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: #2563eb; }
+.btn {
+  padding: 8px 16px; background: #2c2c2f; border: 1px solid #3c3c3f;
+  border-radius: 4px; color: #d8d9da; cursor: pointer; font-size: 14px;
+  font-weight: 500; transition: background 0.2s;
+}
+.btn:hover { background: #3c3c3f; }
+ 
+
+  
