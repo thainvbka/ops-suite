@@ -5,6 +5,7 @@ const pool = require("./config/db");
 const { setupLogger } = require("./utils/logger");
 const { runMigrations } = require("./services/migrationService");
 const { evaluateAllAlerts } = require("./services/alertService");
+const dataSourceManager = require("./datasource/manager");
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -25,6 +26,7 @@ app.use(cors());
 app.use(express.json());
 
 //init data source manager
+dataSourceManager.initialize();
 
 // Run migrations
 runMigrations();
