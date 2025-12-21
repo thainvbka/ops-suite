@@ -166,7 +166,7 @@ INSERT INTO users (username, email, password_hash, full_name, role)
 VALUES (
     'admin',
     'admin@grafana-clone.local',
-    '$2b$10$5vZ3L6Y8FZL5X8Y8FZL5XeJ8FZL5X8Y8FZL5X8Y8FZL5X8Y8FZL5X',
+    '$2a$10$giXCM3RpO4LksY.tvH2D/ewb6d0gngvdr.j9ZExDuNtSZ3d0n.SGe',
     'Administrator',
     'admin'
 ) ON CONFLICT (username) DO NOTHING;
