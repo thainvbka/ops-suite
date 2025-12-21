@@ -391,7 +391,6 @@ function App() {
         </div>
       </nav>
 
-      {/* main content */}
       <div className="main-container">
         {/* Sidebar */}
         {showSidebar && (
