@@ -174,9 +174,9 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate }) {
             </>
           ) : (
             <>
-              <button className="panel-btn" onClick={() => setIsEditing(true)}>✏️</button>
-              <button className="panel-btn" onClick={() => onEdit(panel)}>⚙️</button>
-              <button className="panel-btn" onClick={() => onRemove(panel.id)}>🗑️</button>
+              <button className="panel-btn" onClick={() => setIsEditing(true)}>Edit</button>
+              <button className="panel-btn" onClick={() => onEdit(panel)}>Setting</button>
+              <button className="panel-btn" onClick={() => onRemove(panel.id)}>Delete</button>
             </>
           )}
         </div>

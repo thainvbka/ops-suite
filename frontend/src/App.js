@@ -435,13 +435,24 @@ function App() {
                       >
                         <span>{d.title}</span>
                         <button
-                          className="delete-btn"
+                          className="icon-btn icon-btn--danger"
+                          title="Xóa dashboard"
+                          aria-label={`Xóa dashboard ${d.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteDashboard(d.uid);
+                            if (window.confirm(`Xóa dashboard "${d.title}"?`)) {
+                              deleteDashboard(d.uid);
+                            }
                           }}
                         >
-                          Xóa
+                          {/* Trash icon (SVG inline, khỏi cài lib) */}
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4h8v2" />
+                            <path d="M6 6l1 16h10l1-16" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                          </svg>
                         </button>
                       </li>
                     ))}
@@ -456,7 +467,7 @@ function App() {
                     )}
                     {dataSources.map((ds) => (
                       <li key={ds.id}>
-                        {ds.type === 'postgres' ? '1.' : ds.type === 'prometheus' ? '2.' : 'PLUG'}{' '}
+                        {ds.type === 'postgres' ? '2.' : ds.type === 'prometheus' ? '1.' : 'PLUG'}{' '}
                         {ds.name || ds.id}
                       </li>
                     ))}
