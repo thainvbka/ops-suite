@@ -15,9 +15,9 @@ import axios from "axios";
 const API_URL = "http://localhost:4000/api";
 
 function App() {
-  const [user, setUser] = useState({ username: "Dev User" });
-  const [token, setToken] = useState("dev-token");
-
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
 
@@ -30,7 +30,6 @@ function App() {
   const [showQueryEditor, setShowQueryEditor] = useState(false);
   const [editingPanel, setEditingPanel] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [showExportImport, setShowExportImport] = useState(false);
   const [showAddPanelModal, setShowAddPanelModal] = useState(false);
   const [dataSources, setDataSources] = useState([]);
   // tick to ép panel refetch data
@@ -545,15 +544,6 @@ function App() {
         />
       )}
 
-      {/* Export/Import Modal */}
-      {showExportImport && (
-        <ExportImportModal
-          onClose={() => setShowExportImport(false)}
-          onExport={() => { }}
-          onImport={() => { }}
-        />
-      )}
-
       {/* Add Panel Modal */}
       <AddPanelModal
         isOpen={showAddPanelModal}
@@ -694,64 +684,4 @@ function AccountModal({ onClose, token, user }) {
   );
 }
 
-function ExportImportModal({ onClose, onExport, onImport }) {
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      onImport(file);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="query-editor-modal small-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h3>Import / Export Dashboard</h3>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="modal-body">
-          <div className="export-import-actions">
-            <div className="action-card">
-              <h4>📤 Export</h4>
-              <p>Download dashboard as JSON file</p>
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  onExport();
-                  onClose();
-                }}
-              >
-                Export Dashboard
-              </button>
-            </div>
-
-            <div className="action-card">
-              <h4>📥 Import</h4>
-              <p>Upload dashboard JSON file</p>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-                id="import-file"
-              />
-              <label
-                htmlFor="import-file"
-                className="btn-primary"
-                style={{ cursor: 'pointer' }}
-              >
-                Choose File
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 export default App;
