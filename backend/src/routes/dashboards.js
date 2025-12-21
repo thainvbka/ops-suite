@@ -1,5 +1,5 @@
 const express = require("express");
-const authenticateToken = require("../middleware/auth");
+const authenticateToken = require("../middlewares/auth");
 const pool = require("../config/db");
 const { generateUID } = require("../utils/helpers");
 
@@ -94,9 +94,7 @@ router.delete("/:uid", authenticateToken, async (req, res) => {
   }
 });
 
-// Panels sub-routes (mounted on dashboard router if we wanted, but index.js had them separate or nested)
-// In index.js: app.get('/api/dashboards/:id/panels', ...)
-// So I will keep these here as they are related to dashboards/:id
+// Panels sub-routes
 
 router.get("/:id/panels", authenticateToken, async (req, res) => {
   try {

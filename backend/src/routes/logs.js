@@ -1,5 +1,5 @@
 const express = require("express");
-const authenticateToken = require("../middleware/auth");
+const authenticateToken = require("../middlewares/auth");
 const { logBuffer, MAX_LOGS } = require("../utils/logger");
 
 const router = express.Router();
