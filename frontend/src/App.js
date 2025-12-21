@@ -17,7 +17,7 @@ const API_URL = "http://localhost:4000/api";
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  
+
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
 
@@ -486,7 +486,7 @@ function App() {
                 <h2>{currentDashboard.title}</h2>
                 <div className="dashboard-controls">
                   <button className="btn" onClick={handleOpenAddPanel}>
-                    Add Panel
+                   +  Add Panel
                   </button>
                 </div>
               </div>
