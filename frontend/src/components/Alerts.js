@@ -57,6 +57,21 @@ function Alerts() {
     }
   };
 
+  const toggleAlert = async (alert) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/alerts/${alert.id}`,
+        { ...alert, is_enabled: !alert.is_enabled },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchAlerts();
+    } catch (err) {
+      console.error('Error toggling alert:', err);
+      alert('Failed to toggle alert');
+    }
+  };
+
   const getStateColor = (state) => {
     switch (state) {
       case 'ok': return '#10b981';
@@ -70,7 +85,7 @@ function Alerts() {
     <div className="alerts-page">
       <div className="page-header">
         <h2>Alerts</h2>
-        <button className="btn-primary" onClick={() => setShowEditor(true)}>
+        <button className="btn btn-primary" onClick={() => setShowEditor(true)}>
           + Create Alert
         </button>
       </div>
@@ -93,15 +108,16 @@ function Alerts() {
                     {alert.dashboard_title} / {alert.panel_title}
                   </span>
                 </div>
-                <div className="alert-state" style={{ background: getStateColor(alert.state) }}>
-                  {alert.state.toUpperCase()}
-                </div>
+                <span className={`alert-state ${alert.state || 'ok'}`}>
+                  {(alert.state || 'ok').toUpperCase()}
+                </span>
               </div>
 
               <div className="alert-body">
                 <p>{alert.message}</p>
                 <div className="alert-details">
                   <span>Frequency: {alert.frequency}</span>
+                  <span>Status: {alert.is_enabled !== false ? '✓ Enabled' : '✗ Disabled'}</span>
                   {alert.last_triggered && (
                     <span>Last triggered: {new Date(alert.last_triggered).toLocaleString()}</span>
                   )}
@@ -109,16 +125,22 @@ function Alerts() {
               </div>
 
               <div className="alert-actions">
+                <button
+                  className={`btn ${alert.is_enabled !== false ? 'btn-warning' : 'btn-success'}`}
+                  onClick={() => toggleAlert(alert)}
+                >
+                  {alert.is_enabled !== false ? 'Disable' : 'Enable'}
+                </button>
                 <button className="btn" onClick={() => {
                   setSelectedAlert(alert);
                   setShowEditor(true);
                 }}>
                   Edit
                 </button>
+                <button className="btn" onClick={() => viewHistory(alert.id)}>View History</button>
                 <button className="btn" onClick={() => deleteAlert(alert.id)}>
                   Delete
                 </button>
-                <button className="btn" onClick={() => viewHistory(alert.id)}>View History</button>
               </div>
             </div>
           ))
@@ -204,6 +226,7 @@ function Alerts() {
 function AlertEditor({ alert, onClose, onSave }) {
   const [dashboards, setDashboards] = useState([]);
   const [panels, setPanels] = useState([]);
+  const [channels, setChannels] = useState([]);
   const [selectedDashboard, setSelectedDashboard] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -212,8 +235,8 @@ function AlertEditor({ alert, onClose, onSave }) {
     const params = Array.isArray(evaluator.params)
       ? evaluator.params
       : evaluator.params !== undefined
-      ? [evaluator.params]
-      : [];
+        ? [evaluator.params]
+        : [];
     const [param0, param1] = params;
 
     return {
@@ -224,7 +247,8 @@ function AlertEditor({ alert, onClose, onSave }) {
       threshold: param0 !== undefined ? param0 : 80,
       thresholdMax: param1 !== undefined ? param1 : '',
       dashboardId: alert?.dashboard_id || '',
-      panelId: alert?.panel_id || ''
+      panelId: alert?.panel_id || '',
+      notifications: alert?.notifications || []
     };
   });
 
@@ -241,6 +265,21 @@ function AlertEditor({ alert, onClose, onSave }) {
       }
     };
     fetchDashboards();
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const fetchChannels = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/notification-channels`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setChannels(res.data.channels || []);
+      } catch (err) {
+        console.error('Error fetching channels:', err);
+      }
+    };
+    fetchChannels();
   }, []);
 
   useEffect(() => {
@@ -292,8 +331,8 @@ function AlertEditor({ alert, onClose, onSave }) {
       formData.condition === 'no_value'
         ? []
         : isRangeCondition
-        ? [Number(formData.threshold), Number(formData.thresholdMax)]
-        : [Number(formData.threshold)];
+          ? [Number(formData.threshold), Number(formData.thresholdMax)]
+          : [Number(formData.threshold)];
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
@@ -308,7 +347,7 @@ function AlertEditor({ alert, onClose, onSave }) {
         dashboardId: Number(dashId),
         panelId: Number(panelId),
         conditions,
-        notifications: []
+        notifications: formData.notifications
       };
 
       if (alert) {
@@ -346,7 +385,7 @@ function AlertEditor({ alert, onClose, onSave }) {
               type="text"
               className="editor-select"
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="High CPU Usage"
               required
             />
@@ -392,7 +431,7 @@ function AlertEditor({ alert, onClose, onSave }) {
             <textarea
               className="query-textarea"
               value={formData.message}
-              onChange={(e) => setFormData({...formData, message: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               placeholder="CPU usage is critically high!"
               rows={3}
             />
@@ -405,7 +444,7 @@ function AlertEditor({ alert, onClose, onSave }) {
               <select
                 className="condition-select"
                 value={formData.condition}
-                onChange={(e) => setFormData({...formData, condition: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
               >
                 <option value="above">above</option>
                 <option value="below">below</option>
@@ -417,7 +456,7 @@ function AlertEditor({ alert, onClose, onSave }) {
                 type="number"
                 className="threshold-input"
                 value={formData.threshold}
-                onChange={(e) => setFormData({...formData, threshold: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, threshold: e.target.value })}
               />
               {(formData.condition === 'outside_range' || formData.condition === 'within_range') && (
                 <>
@@ -426,7 +465,7 @@ function AlertEditor({ alert, onClose, onSave }) {
                     type="number"
                     className="threshold-input"
                     value={formData.thresholdMax}
-                    onChange={(e) => setFormData({...formData, thresholdMax: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, thresholdMax: e.target.value })}
                   />
                 </>
               )}
@@ -438,7 +477,7 @@ function AlertEditor({ alert, onClose, onSave }) {
             <select
               className="editor-select"
               value={formData.frequency}
-              onChange={(e) => setFormData({...formData, frequency: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
             >
               <option value="10s">Every 10 seconds</option>
               <option value="30s">Every 30 seconds</option>
@@ -449,9 +488,35 @@ function AlertEditor({ alert, onClose, onSave }) {
           </div>
 
           <div className="editor-section">
-            <h4>Notifications</h4>
-            <button type="button" className="btn">+ Add Notification Channel</button>
-            <p className="help-text">Send notifications via Email, Slack, Webhook, etc.</p>
+            <h4>Notification Channels</h4>
+            {channels.length === 0 ? (
+              <p className="help-text">No notification channels configured. Create one first.</p>
+            ) : (
+              <div className="channel-checkboxes">
+                {channels.map(channel => (
+                  <label key={channel.id} className="channel-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={formData.notifications.includes(channel.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            notifications: [...formData.notifications, channel.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            notifications: formData.notifications.filter(id => id !== channel.id)
+                          });
+                        }
+                      }}
+                    />
+                    <span>{channel.name} ({channel.type})</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="modal-footer">

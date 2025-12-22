@@ -81,14 +81,22 @@ CREATE TABLE IF NOT EXISTS alerts (
     panel_id INTEGER REFERENCES panels(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     message TEXT,
-    state VARCHAR(50) DEFAULT 'ok',
-    frequency VARCHAR(50),
+    state VARCHAR(50) DEFAULT 'pending',
+    frequency VARCHAR(50) DEFAULT '1m',
     handler INTEGER DEFAULT 1,
+    datasource VARCHAR(100) DEFAULT 'prometheus',
+    query TEXT,
+    comparator VARCHAR(50) DEFAULT '>',
+    threshold DOUBLE PRECISION DEFAULT 0,
+    time_window VARCHAR(50) DEFAULT '5m',
+    eval_interval_seconds INTEGER DEFAULT 60,
+    is_enabled BOOLEAN DEFAULT TRUE,
     conditions JSONB,
-    notifications JSONB,
+    notifications JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_triggered TIMESTAMP
+    last_triggered TIMESTAMP,
+    last_evaluated_at TIMESTAMP
 );
 
 -- Alert History table
@@ -97,6 +105,10 @@ CREATE TABLE IF NOT EXISTS alert_history (
     alert_id INTEGER REFERENCES alerts(id) ON DELETE CASCADE,
     state VARCHAR(50),
     message TEXT,
+    value DOUBLE PRECISION,
+    threshold DOUBLE PRECISION,
+    notification_sent BOOLEAN DEFAULT FALSE,
+    notification_channels JSONB DEFAULT '[]'::jsonb,
     data JSONB,
     triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -137,6 +149,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     last_used TIMESTAMP
 );
 
+
 -- Metrics table (for PostgreSQL datasource)
 CREATE TABLE IF NOT EXISTS metrics (
     id SERIAL PRIMARY KEY,
@@ -148,12 +161,24 @@ CREATE TABLE IF NOT EXISTS metrics (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes
+-- Notification Channels table
+CREATE TABLE IF NOT EXISTS notification_channels (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    config JSONB NOT NULL,
+    is_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_dashboards_created_by ON dashboards(created_by);
 CREATE INDEX IF NOT EXISTS idx_dashboards_uid ON dashboards(uid);
 CREATE INDEX IF NOT EXISTS idx_panels_dashboard_id ON panels(dashboard_id);
 CREATE INDEX IF NOT EXISTS idx_variables_dashboard_id ON variables(dashboard_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_dashboard_id ON alerts(dashboard_id);
+CREATE INDEX IF NOT EXISTS idx_alerts_enabled ON alerts(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_alert_history_alert_id ON alert_history(alert_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics(timestamp);

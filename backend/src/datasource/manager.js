@@ -12,7 +12,7 @@ class DataSourceManager {
     try {
       const prometheusUrl = process.env.PROMETHEUS_URL || 'http://prometheus:9090';
       const prometheus = new PrometheusDataSource(prometheusUrl);
-      
+
       if (await prometheus.testConnection()) {
         this.dataSources.set('prometheus', prometheus);
         this.pushLog('prometheus', 'Connected to Prometheus');
@@ -26,9 +26,9 @@ class DataSourceManager {
         url: process.env.METRICS_DB_URL || process.env.DATABASE_URL,
         ssl: false
       };
-      
+
       const postgres = new PostgreSQLDataSource(postgresConfig);
-      
+
       if (await postgres.testConnection()) {
         this.dataSources.set('postgres', postgres);
         this.pushLog('postgres', 'Connected to PostgreSQL');
@@ -63,10 +63,10 @@ class DataSourceManager {
       switch (datasource) {
         case 'prometheus':
           return await this.queryPrometheus(options);
-        
+
         case 'postgres':
           return await this.queryPostgreSQL(options);
-        
+
         default:
           throw new Error(`Unsupported datasource: ${datasource}`);
       }
@@ -138,8 +138,31 @@ class DataSourceManager {
     const range = this.resolveTimeRange(from, to);
     const selectedValueColumn = valueColumn || 'value';
 
-    // Nếu có custom raw query thì chạy luôn
-    if (rawQuery) {
+    // Detect PromQL syntax patterns that shouldn't be sent to PostgreSQL
+    const isPromQLQuery = (query) => {
+      if (!query || typeof query !== 'string') return false;
+      const promQLPatterns = [
+        /^\s*\d+\s*[-+*/]/,              // starts with number and operator
+        /\bavg\s+by\b/i,                 // Prometheus aggregation
+        /\bsum\s+by\b/i,
+        /\bmax\s+by\b/i,
+        /\bmin\s+by\b/i,
+        /\birate\s*\(/i,                 // Prometheus rate functions
+        /\brate\s*\(/i,
+        /\bincrease\s*\(/i,
+        /\{[^}]*mode\s*=/,               // label selectors like {mode="idle"}
+        /\{[^}]*job\s*=/,                // label selectors like {job="juice-shop"}
+        /^\w+\{[^}]+\}/,                 // metric_name{labels} format
+        /node_cpu_seconds_total/,        // Prometheus metric names
+        /http_requests_count/,           // Common Prometheus metric
+        /\[\s*\d+[smhdw]\s*\]/           // time ranges like [5m]
+      ];
+      return promQLPatterns.some(pattern => pattern.test(query));
+    };
+
+    // Nếu có custom raw query VÀ nó không phải PromQL thì chạy luôn
+    if (rawQuery && !isPromQLQuery(rawQuery)) {
+      this.pushLog('postgres', `Executing custom SQL query: ${rawQuery.substring(0, 100)}...`);
       const interpolatedQuery = this.interpolateSQLTimeRange(rawQuery, range);
       const rows = await postgres.query(interpolatedQuery);
       const hasTimeField =
@@ -152,10 +175,10 @@ class DataSourceManager {
         const timeField = rows[0].time
           ? 'time'
           : rows[0].timestamp
-          ? 'timestamp'
-          : rows[0].ts
-          ? 'ts'
-          : 'date';
+            ? 'timestamp'
+            : rows[0].ts
+              ? 'ts'
+              : 'date';
         const valueField = rows[0].value !== undefined ? 'value' : 'val';
 
         const normalized = rows.map((row) => ({
@@ -175,7 +198,11 @@ class DataSourceManager {
       };
     }
 
-    // Còn không thì dùng helper queryTimeSeries
+    // Nếu query là PromQL hoặc không có query, dùng helper queryTimeSeries
+    if (rawQuery && isPromQLQuery(rawQuery)) {
+      this.pushLog('postgres', `Detected PromQL syntax in query, using default SQL generation for metric: ${metric}`, 'warn');
+    }
+
     const data = await postgres.queryTimeSeries({
       table,
       timeColumn,

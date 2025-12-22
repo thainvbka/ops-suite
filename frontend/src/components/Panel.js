@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   LineChart,
   Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   PieChart,
@@ -19,12 +21,65 @@ import { API_URL } from '../api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+// Metric type detection
+const detectMetricType = (title = '', datasource = '') => {
+  const lower = title.toLowerCase();
+  if (lower.includes('cpu')) return 'cpu';
+  if (lower.includes('memory') || lower.includes('ram') || lower.includes('heap')) return 'memory';
+  if (lower.includes('network') || lower.includes('bandwidth') || lower.includes('tx') || lower.includes('rx')) return 'network';
+  if (lower.includes('http') || lower.includes('request')) return 'http';
+  return 'default';
+};
+
+// Color schemes by metric type
+const METRIC_COLORS = {
+  cpu: {
+    stroke: '#f59e0b',
+    fill: '#f59e0b',
+    glow: '0 0 20px rgba(245, 158, 11, 0.4)',
+    gradient: { start: '#f59e0b', end: '#ef4444' }
+  },
+  memory: {
+    stroke: '#8b5cf6',
+    fill: '#8b5cf6',
+    glow: '0 0 20px rgba(139, 92, 246, 0.4)',
+    gradient: { start: '#8b5cf6', end: '#a78bfa' }
+  },
+  network: {
+    stroke: '#06b6d4',
+    fill: '#06b6d4',
+    glow: '0 0 20px rgba(6, 182, 212, 0.4)',
+    gradient: { start: '#3b82f6', end: '#06b6d4' }
+  },
+  http: {
+    stroke: '#10b981',
+    fill: '#10b981',
+    glow: '0 0 20px rgba(16, 185, 129, 0.4)',
+    gradient: { start: '#10b981', end: '#34d399' }
+  },
+  default: {
+    stroke: '#3b82f6',
+    fill: '#3b82f6',
+    glow: '0 0 20px rgba(59, 130, 246, 0.4)',
+    gradient: { start: '#3b82f6', end: '#60a5fa' }
+  }
+};
+
+
 function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, token }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(panel.title);
   const [panelType, setPanelType] = useState(panel.type || 'graph');
+
+  // Detect metric type for coloring
+  const metricType = useMemo(
+    () => detectMetricType(panel.title, panel.datasource),
+    [panel.title, panel.datasource]
+  );
+  const colorScheme = METRIC_COLORS[metricType];
+
   const parsedTargets = useMemo(() => {
     if (Array.isArray(panel.targets)) return panel.targets;
     if (typeof panel.targets === 'string') {
@@ -69,8 +124,8 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
           item.value !== undefined
             ? item.value
             : item.Value !== undefined
-            ? item.Value
-            : item.val;
+              ? item.Value
+              : item.val;
         const parsedTs = ts ? new Date(ts) : null;
         if (!parsedTs || Number.isNaN(parsedTs.getTime())) return null;
         return {
@@ -96,8 +151,8 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
           },
           headers: token
             ? {
-                Authorization: `Bearer ${token}`,
-              }
+              Authorization: `Bearer ${token}`,
+            }
             : undefined,
         });
 
@@ -140,17 +195,17 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
 
     switch (panelType) {
       case 'graph':
-        return <GraphVisualization data={data} />;
+        return <GraphVisualization data={data} colorScheme={colorScheme} />;
       case 'bar':
-        return <BarVisualization data={data} />;
+        return <BarVisualization data={data} colorScheme={colorScheme} />;
       case 'pie':
         return <PieVisualization data={data} />;
       case 'stat':
-        return <StatVisualization data={data} />;
+        return <StatVisualization data={data} colorScheme={colorScheme} />;
       case 'table':
         return <TableVisualization data={data} />;
       default:
-        return <GraphVisualization data={data} />;
+        return <GraphVisualization data={data} colorScheme={colorScheme} />;
     }
   };
 
@@ -326,10 +381,18 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
   );
 }
 
-function GraphVisualization({ data }) {
+function GraphVisualization({ data, colorScheme = METRIC_COLORS.default }) {
+  const gradientId = `gradient-${Math.random().toString(36).substr(2, 9)}`;
+
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data}>
+      <AreaChart data={data}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={colorScheme.gradient.start} stopOpacity={0.8} />
+            <stop offset="95%" stopColor={colorScheme.gradient.end} stopOpacity={0.1} />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2f" />
         <XAxis
           dataKey="timestamp"
@@ -338,24 +401,30 @@ function GraphVisualization({ data }) {
         />
         <YAxis stroke="#9b9b9b" />
         <Tooltip
-          contentStyle={{ background: '#1f1f23', border: '1px solid #2c2c2f' }}
-          labelStyle={{ color: '#d8d9da' }}
+          contentStyle={{
+            background: '#1f1f23',
+            border: `1px solid ${colorScheme.stroke}`,
+            borderRadius: '8px',
+            boxShadow: colorScheme.glow
+          }}
+          labelStyle={{ color: '#d8d9da', fontWeight: 600 }}
+          itemStyle={{ color: colorScheme.stroke }}
           labelFormatter={(label) => new Date(label).toLocaleString()}
         />
-        <Legend />
-        <Line
+        <Area
           type="monotone"
           dataKey="value"
-          stroke="#3b82f6"
+          stroke={colorScheme.stroke}
           strokeWidth={2}
-          dot={false}
+          fill={`url(#${gradientId})`}
+          animationDuration={800}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
 
-function BarVisualization({ data }) {
+function BarVisualization({ data, colorScheme = METRIC_COLORS.default }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
@@ -367,12 +436,20 @@ function BarVisualization({ data }) {
         />
         <YAxis stroke="#9b9b9b" />
         <Tooltip
-          contentStyle={{ background: '#1f1f23', border: '1px solid #2c2c2f' }}
-          labelStyle={{ color: '#d8d9da' }}
+          contentStyle={{
+            background: '#1f1f23',
+            border: `1px solid ${colorScheme.stroke}`,
+            borderRadius: '8px'
+          }}
+          labelStyle={{ color: '#d8d9da', fontWeight: 600 }}
+          itemStyle={{ color: colorScheme.stroke }}
           labelFormatter={(label) => new Date(label).toLocaleString()}
         />
-        <Legend />
-        <Bar dataKey="value" fill="#3b82f6" />
+        <Bar
+          dataKey="value"
+          fill={colorScheme.fill}
+          animationDuration={500}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -413,22 +490,35 @@ function PieVisualization({ data }) {
   );
 }
 
-function StatVisualization({ data }) {
+function StatVisualization({ data, colorScheme = METRIC_COLORS.default }) {
   const latest = data[data.length - 1]?.value || 0;
   const previous = data[data.length - 2]?.value || 0;
   const change = latest - previous;
   const changePercent = previous !== 0 ? (change / previous) * 100 : 0;
+  const isPositive = change >= 0;
 
   return (
     <div className="stat-container">
-      <div className="stat-value">{latest.toFixed(2)}</div>
+      <div
+        className="stat-value"
+        style={{
+          background: `linear-gradient(135deg, ${colorScheme.gradient.start}, ${colorScheme.gradient.end})`,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}
+      >
+        {latest.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+      </div>
       <div className="stat-label">Current Value</div>
-      <div className={`stat-trend ${change >= 0 ? 'positive' : 'negative'}`}>
-        {change >= 0 ? '↑' : '↓'} {Math.abs(changePercent).toFixed(1)}%
+      <div
+        className={`stat-trend ${isPositive ? 'positive' : 'negative'}`}
+        style={{ color: isPositive ? '#10b981' : '#ef4444' }}
+      >
+        <span className="stat-arrow">{isPositive ? '↑' : '↓'}</span>
+        <span className="stat-percent">{Math.abs(changePercent).toFixed(1)}%</span>
         <span className="stat-change">
-          {' '}
-          ({change >= 0 ? '+' : ''}
-          {change.toFixed(2)})
+          ({isPositive ? '+' : ''}{change.toFixed(2)})
         </span>
       </div>
     </div>
@@ -464,4 +554,4 @@ function TableVisualization({ data }) {
 export default Panel;
 
 
- 
+

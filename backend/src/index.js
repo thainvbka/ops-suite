@@ -15,6 +15,8 @@ const panelRoutes = require("./routes/panels");
 const logRoutes = require("./routes/logs");
 const datasourceRoutes = require("./routes/datasources");
 const metricRoutes = require("./routes/metrics");
+const notificationChannelRoutes = require("./routes/notificationChannels");
+const containerRoutes = require("./routes/containers");
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use("/api/alerts", alertRoutes);
 app.use("/api/panels", panelRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api/datasources", datasourceRoutes);
+app.use("/api/notification-channels", notificationChannelRoutes);
+app.use("/api/containers", containerRoutes);
 app.use("/api", metricRoutes);
 
 //health check endpoint

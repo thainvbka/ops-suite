@@ -4,12 +4,18 @@ const { Pool } = require('pg');
 const fs = require('fs');
 
 const {
-  TARGET_CONTAINER = 'grafana-backend',
+  TARGET_CONTAINERS,
+  TARGET_CONTAINER, // fallback for backward compatibility
   DATABASE_URL,
   COLLECT_INTERVAL_MS = 30000,
   METRICS_TABLE = 'metrics',
   DOCKER_SOCKET = '/var/run/docker.sock'
 } = process.env;
+
+// Parse target containers (comma-separated)
+const targetContainers = TARGET_CONTAINERS
+  ? TARGET_CONTAINERS.split(',').map(c => c.trim()).filter(Boolean)
+  : (TARGET_CONTAINER ? [TARGET_CONTAINER] : []);
 
 if (!DATABASE_URL) {
   console.error('❌ DATABASE_URL is required');
@@ -73,38 +79,51 @@ function computeCpuPercent(stats) {
   return 0;
 }
 
-async function saveMetric(metricName, value, ts) {
+async function saveMetric(metricName, value, ts, containerName) {
   await pool.query(
-    `INSERT INTO ${METRICS_TABLE} (metric_name, timestamp, value)
-     VALUES ($1, $2, $3)`,
-    [metricName, ts, value]
+    `INSERT INTO ${METRICS_TABLE} (metric_name, timestamp, value, labels)
+     VALUES ($1, $2, $3, $4)`,
+    [metricName, ts, value, JSON.stringify({ container: containerName })]
   );
 }
 
 async function collectOnce() {
-  try {
-    const stats = await fetchContainerStats(TARGET_CONTAINER);
-    const cpuPercent = computeCpuPercent(stats);
-    const memoryUsage = stats.memory_stats?.usage || 0;
-    const now = new Date();
+  for (const container of targetContainers) {
+    try {
+      const stats = await fetchContainerStats(container);
+      const cpuPercent = computeCpuPercent(stats);
+      const memoryUsage = stats.memory_stats?.usage || 0;
 
-    await saveMetric('cpu_usage', cpuPercent, now);
-    await saveMetric('memory_usage', memoryUsage, now);
+      // Network metrics
+      const networkTxBytes = stats.networks?.eth0?.tx_bytes || 0;
+      const networkRxBytes = stats.networks?.eth0?.rx_bytes || 0;
 
-    console.log(
-      `[collector] ${now.toISOString()} cpu=${cpuPercent.toFixed(
-        2
-      )}% mem=${memoryUsage}`
-    );
-  } catch (err) {
-    console.error('[collector] collect error:', err.message);
-    console.error('[collector] full error:', err);
+      const now = new Date();
+
+      await saveMetric('cpu_usage', cpuPercent, now, container);
+      await saveMetric('memory_usage', memoryUsage, now, container);
+      await saveMetric('network_tx_bytes', networkTxBytes, now, container);
+      await saveMetric('network_rx_bytes', networkRxBytes, now, container);
+
+      console.log(
+        `[collector] ${container} ${now.toISOString()} cpu=${cpuPercent.toFixed(
+          2
+        )}% mem=${memoryUsage} net_tx=${networkTxBytes} net_rx=${networkRxBytes}`
+      );
+    } catch (err) {
+      console.error(`[collector] collect error for ${container}:`, err.message);
+    }
   }
 }
 
 async function main() {
+  if (targetContainers.length === 0) {
+    console.error('[collector] No target containers specified');
+    process.exit(1);
+  }
+
   console.log(
-    `[collector] starting for container="${TARGET_CONTAINER}" interval=${COLLECT_INTERVAL_MS}ms`
+    `[collector] starting for containers="${targetContainers.join(', ')}" interval=${COLLECT_INTERVAL_MS}ms`
   );
   console.log(`[collector] docker socket: ${DOCKER_SOCKET} exists=${fs.existsSync(DOCKER_SOCKET)}`);
   try {

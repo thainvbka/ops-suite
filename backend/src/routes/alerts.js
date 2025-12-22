@@ -74,6 +74,11 @@ router.post("/", authenticateToken, async (req, res) => {
       alertQuery = "";
     }
 
+    console.log('[alerts] Creating alert with payload:', JSON.stringify({
+      name, frequency, conditions, notifications,
+      evaluator: conditions?.evaluator
+    }, null, 2));
+
     const result = await pool.query(
       "INSERT INTO alerts (dashboard_id, panel_id, name, message, frequency, datasource, query, comparator, threshold, time_window, eval_interval_seconds, is_enabled, conditions, notifications, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *",
       [
@@ -87,10 +92,10 @@ router.post("/", authenticateToken, async (req, res) => {
         conditions?.evaluator?.type === "below"
           ? "<"
           : conditions?.evaluator?.type === "above"
-          ? ">"
-          : conditions?.evaluator?.type === "outside_range"
-          ? "outside"
-          : "within",
+            ? ">"
+            : conditions?.evaluator?.type === "outside_range"
+              ? "outside"
+              : "within",
         Array.isArray(conditions?.evaluator?.params)
           ? Number(conditions.evaluator.params[0])
           : Number(conditions?.evaluator?.params) || 0,
@@ -99,8 +104,8 @@ router.post("/", authenticateToken, async (req, res) => {
           ? Number(conditions.eval_interval_seconds)
           : 60,
         true,
-        conditions || {},
-        notifications || [],
+        JSON.stringify(conditions || {}),
+        JSON.stringify(notifications || []),
         "pending",
       ]
     );
@@ -124,8 +129,8 @@ router.put("/:id", authenticateToken, async (req, res) => {
         message,
         state || "pending",
         frequency,
-        conditions,
-        notifications,
+        typeof conditions === 'string' ? conditions : JSON.stringify(conditions || {}),
+        typeof notifications === 'string' ? notifications : JSON.stringify(notifications || []),
         req.params.id,
       ]
     );

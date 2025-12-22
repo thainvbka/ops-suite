@@ -5,10 +5,13 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
   const [datasource, setDatasource] = useState('prometheus');
   const [presetId, setPresetId] = useState('');
   const [title, setTitle] = useState('');
+  const [customQuery, setCustomQuery] = useState('');
 
   const presets = useMemo(() => {
     return METRIC_PRESETS[datasource] || [];
   }, [datasource]);
+
+  const selectedPreset = presets.find(p => p.id === presetId);
 
   // khi đổi datasource thì auto chọn preset đầu tiên
   useEffect(() => {
@@ -17,9 +20,14 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
     }
   }, [presets, presetId]);
 
-  if (!isOpen) return null;
+  // Update customQuery when preset changes
+  useEffect(() => {
+    if (selectedPreset) {
+      setCustomQuery(selectedPreset.query);
+    }
+  }, [selectedPreset]);
 
-  const selectedPreset = presets.find(p => p.id === presetId);
+  if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,10 +36,10 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
     const panelTitle = title.trim() || selectedPreset.label;
 
     onCreate({
-      title: panelTitle,
-      datasource,
+      title: panelTitle || selectedPreset.title,
+      datasource: selectedPreset.datasource,
       type: selectedPreset.type || 'graph',
-      query: selectedPreset.query
+      query: customQuery || selectedPreset.query
     });
 
     // reset
@@ -59,6 +67,7 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
             >
               <option value="prometheus">Prometheus</option>
               <option value="postgres">PostgreSQL</option>
+              <option value="juiceShop">🧃 Juice Shop</option>
             </select>
           </div>
 
@@ -79,7 +88,7 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
 
           {/* Tiêu đề panel */}
           <div className="form-group">
-            <label>Tiêu đề panel (có thể để trống)</label>
+            <label>Tiêu đề panel</label>
             <input
               type="text"
               placeholder="VD: CPU usage server 1"
@@ -88,15 +97,16 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
             />
           </div>
 
-          {/* Preview query */}
+          {/* Query Editor */}
           {selectedPreset && (
             <div className="form-group">
-              <label>Query (tự sinh – user không cần sửa)</label>
+              <label>Query</label>
               <textarea
-                value={selectedPreset.query}
-                readOnly
+                value={customQuery}
+                onChange={(e) => setCustomQuery(e.target.value)}
                 rows={6}
                 style={{ fontFamily: 'monospace', fontSize: 12 }}
+                placeholder="Enter your query here..."
               />
             </div>
           )}

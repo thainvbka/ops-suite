@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import axios from "axios";
 import "./App.css";
-import Login from './components/Login';
+import Login from "./components/Login";
 import TimeRangePicker from './components/TimeRangePicker';
 import Panel from './components/Panel';
 import QueryEditor from './components/QueryEditor';
-import Alerts from './components/Alerts';
-import Logs from './components/Logs';
-import AddPanelModal from './components/AddPanelModal';
-import axios from "axios";
+import Alerts from "./components/Alerts";
+import Logs from "./components/Logs";
+import AddPanelModal from "./components/AddPanelModal";
+import NotificationChannels from "./components/NotificationChannels";
+import ContainerOverview from "./components/ContainerOverview";
 import { API_URL } from "./api";
 
 function App() {
@@ -396,24 +398,36 @@ function App() {
           <aside className="sidebar">
             <div className="sidebar-section">
               <h3>Navigation</h3>
-              <ul className="nav-list">
+              <ul className="sidebar-nav">
                 <li
                   className={currentPage === 'dashboard' ? 'active' : ''}
                   onClick={() => setCurrentPage('dashboard')}
                 >
-                  Dashboards
+                  📊 Dashboards
                 </li>
                 <li
                   className={currentPage === 'alerts' ? 'active' : ''}
                   onClick={() => setCurrentPage('alerts')}
                 >
-                  Alerts
+                  🔔 Alerts
+                </li>
+                <li
+                  className={currentPage === 'channels' ? 'active' : ''}
+                  onClick={() => setCurrentPage('channels')}
+                >
+                  📣 Notification Channels
                 </li>
                 <li
                   className={currentPage === 'logs' ? 'active' : ''}
                   onClick={() => setCurrentPage('logs')}
                 >
-                  Logs
+                  📄 Logs
+                </li>
+                <li
+                  className={currentPage === 'containers' ? 'active' : ''}
+                  onClick={() => setCurrentPage('containers')}
+                >
+                  🐳 Containers
                 </li>
               </ul>
             </div>
@@ -485,7 +499,7 @@ function App() {
                 <h2>{currentDashboard.title}</h2>
                 <div className="dashboard-controls">
                   <button className="btn" onClick={handleOpenAddPanel}>
-                   +  Add Panel
+                    +  Add Panel
                   </button>
                 </div>
               </div>
@@ -528,8 +542,12 @@ function App() {
             </>
           ) : currentPage === 'alerts' ? (
             <Alerts />
+          ) : currentPage === 'channels' ? (
+            <NotificationChannels token={token} />
           ) : currentPage === 'logs' ? (
             <Logs token={token} />
+          ) : currentPage === 'containers' ? (
+            <ContainerOverview token={token} />
           ) : (
             <div className="empty-state">
               <h2>No dashboard selected</h2>
