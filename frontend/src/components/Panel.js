@@ -15,10 +15,11 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import axios from 'axios';
+import { API_URL } from '../api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate }) {
+function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, token }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -85,14 +86,19 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('http://localhost:4000/api/metrics', {
+        const res = await axios.get(`${API_URL}/metrics`, {
           params: {
             datasource: effectiveDatasource,
             metric: effectiveMetric,
             query: effectiveQuery,
             from: timeRange.from,
-            to: timeRange.to
-          }
+            to: timeRange.to,
+          },
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
         });
 
         const responseData = res.data || {};

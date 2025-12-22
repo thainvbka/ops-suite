@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../api';
 
 function Alerts() {
   const [alerts, setAlerts] = useState([]);
@@ -17,7 +18,7 @@ function Alerts() {
   const fetchAlerts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:4000/api/alerts', {
+      const res = await axios.get(`${API_URL}/alerts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAlerts(res.data.alerts);
@@ -33,7 +34,7 @@ function Alerts() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:4000/api/alerts/${id}`, {
+      await axios.delete(`${API_URL}/alerts/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchAlerts();
@@ -45,7 +46,7 @@ function Alerts() {
   const viewHistory = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:4000/api/alerts/${id}/history`, {
+      const res = await axios.get(`${API_URL}/alerts/${id}/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistoryModal({ open: true, items: res.data.history || [] });
@@ -206,21 +207,32 @@ function AlertEditor({ alert, onClose, onSave }) {
   const [selectedDashboard, setSelectedDashboard] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [formData, setFormData] = useState({
-    name: alert?.name || '',
-    message: alert?.message || '',
-    frequency: alert?.frequency || '1m',
-    condition: 'above',
-    threshold: 80,
-    dashboardId: alert?.dashboard_id || '',
-    panelId: alert?.panel_id || ''
+  const [formData, setFormData] = useState(() => {
+    const evaluator = alert?.conditions?.evaluator || {};
+    const params = Array.isArray(evaluator.params)
+      ? evaluator.params
+      : evaluator.params !== undefined
+      ? [evaluator.params]
+      : [];
+    const [param0, param1] = params;
+
+    return {
+      name: alert?.name || '',
+      message: alert?.message || '',
+      frequency: alert?.frequency || '1m',
+      condition: evaluator.type || 'above',
+      threshold: param0 !== undefined ? param0 : 80,
+      thresholdMax: param1 !== undefined ? param1 : '',
+      dashboardId: alert?.dashboard_id || '',
+      panelId: alert?.panel_id || ''
+    };
   });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const fetchDashboards = async () => {
       try {
-        const res = await axios.get('http://localhost:4000/api/dashboards', {
+        const res = await axios.get(`${API_URL}/dashboards`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setDashboards(res.data.dashboards || []);
@@ -244,7 +256,7 @@ function AlertEditor({ alert, onClose, onSave }) {
     const fetchPanels = async () => {
       try {
         const targetId = dashObj?.uid || dashId;
-        const res = await axios.get(`http://localhost:4000/api/dashboards/${targetId}`, {
+        const res = await axios.get(`${API_URL}/dashboards/${targetId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPanels(res.data.panels || res.data?.panels || []);
@@ -264,11 +276,29 @@ function AlertEditor({ alert, onClose, onSave }) {
       alert('Please select dashboard and panel');
       return;
     }
+    const isRangeCondition =
+      formData.condition === 'outside_range' ||
+      formData.condition === 'within_range';
+
+    if (
+      isRangeCondition &&
+      (formData.threshold === '' || formData.thresholdMax === '')
+    ) {
+      setErrorMsg('Please enter both thresholds for range condition');
+      return;
+    }
+
+    const evaluatorParams =
+      formData.condition === 'no_value'
+        ? []
+        : isRangeCondition
+        ? [Number(formData.threshold), Number(formData.thresholdMax)]
+        : [Number(formData.threshold)];
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
       const conditions = {
-        evaluator: { type: formData.condition, params: [Number(formData.threshold)] },
+        evaluator: { type: formData.condition, params: evaluatorParams },
         operator: { type: 'and' },
         query: { params: ['A', '5m', 'now'] }
       };
@@ -282,11 +312,11 @@ function AlertEditor({ alert, onClose, onSave }) {
       };
 
       if (alert) {
-        await axios.put(`http://localhost:4000/api/alerts/${alert.id}`, data, {
+        await axios.put(`${API_URL}/alerts/${alert.id}`, data, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('http://localhost:4000/api/alerts', data, {
+        await axios.post(`${API_URL}/alerts`, data, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -389,6 +419,17 @@ function AlertEditor({ alert, onClose, onSave }) {
                 value={formData.threshold}
                 onChange={(e) => setFormData({...formData, threshold: e.target.value})}
               />
+              {(formData.condition === 'outside_range' || formData.condition === 'within_range') && (
+                <>
+                  <span>and</span>
+                  <input
+                    type="number"
+                    className="threshold-input"
+                    value={formData.thresholdMax}
+                    onChange={(e) => setFormData({...formData, thresholdMax: e.target.value})}
+                  />
+                </>
+              )}
             </div>
           </div>
 

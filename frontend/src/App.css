@@ -1365,3 +1365,70 @@ body {
   font-size: 12px;
   text-align: right;
 }
+
+/* Metrics table (panel type = table) */
+.table-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.metrics-table-wrapper {
+  border: 1px solid #2c2c2f;
+  border-radius: 8px;
+  background: #111217;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.metrics-table-header,
+.metrics-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: center;
+  text-align: center;
+}
+
+.metrics-table-header {
+  padding: 10px 12px;
+  background: #1c1f26;
+  font-weight: 600;
+  font-size: 13px;
+  color: #e5e7eb;
+  border-bottom: 1px solid #2c2c2f;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.metrics-table-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.metrics-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1f1f23;
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+.metrics-row:last-child {
+  border-bottom: none;
+}
+
+.metrics-col.time {
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.metrics-col.value {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: #e5e7eb;
+}

@@ -5,7 +5,7 @@ const dataSourceManager = require("../datasource/manager");
 const router = express.Router();
 
 // Query metrics from any datasource
-router.get("/metrics", async (req, res) => {
+router.get("/metrics", authenticateToken, async (req, res) => {
   try {
     const result = await dataSourceManager.query(req.query);
     res.json(result);

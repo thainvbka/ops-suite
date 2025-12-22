@@ -11,8 +11,7 @@ import Alerts from './components/Alerts';
 import Logs from './components/Logs';
 import AddPanelModal from './components/AddPanelModal';
 import axios from "axios";
-
-const API_URL = "http://localhost:4000/api";
+import { API_URL } from "./api";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -514,7 +513,6 @@ function App() {
                     <Panel
                       panel={panel}
                       timeRange={timeRange}
-                      token={token}
                       refreshTick={refreshTick}
                       onRemove={removePanel}
                       onEdit={(p) => {
@@ -522,6 +520,7 @@ function App() {
                         setShowQueryEditor(true);
                       }}
                       onUpdate={updatePanel}
+                      token={token}
                     />
                   </div>
                 ))}
@@ -547,6 +546,7 @@ function App() {
       {showQueryEditor && (
         <QueryEditor
           panel={editingPanel}
+          token={token}
           onClose={() => setShowQueryEditor(false)}
           onSave={(updates) => {
             updatePanel(editingPanel.id, updates);

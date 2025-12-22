@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../api';
 
 const DATASOURCES = [
   { id: 'prometheus', name: 'Prometheus', type: 'prometheus' },
@@ -16,7 +17,7 @@ const METRICS = [
   'error_rate'
 ];
 
-function QueryEditor({ panel, onClose, onSave }) {
+function QueryEditor({ panel, onClose, onSave, token }) {
   const [datasource, setDatasource] = useState(panel.datasource || 'prometheus');
   const [metric, setMetric] = useState(panel.metric || 'cpu_usage');
   const [query, setQuery] = useState(panel.query || '');
@@ -27,11 +28,21 @@ function QueryEditor({ panel, onClose, onSave }) {
   const runQuery = async () => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:4000/api/query', {
-        datasource,
-        query: query || `SELECT ${metric} FROM metrics`,
-        metric
-      });
+      const res = await axios.post(
+        `${API_URL}/query`,
+        {
+          datasource,
+          query: query || `SELECT ${metric} FROM metrics`,
+          metric,
+        },
+        {
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        }
+      );
       setPreviewData(res.data.result);
     } catch (err) {
       console.error('Query error:', err);

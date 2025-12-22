@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import axios from 'axios';
-
-const API_URL = "http://localhost:4000/api";
+import { API_URL } from '../api';
 
 export default function Logs({ token }) {
   const [dsLogs, setDsLogs] = useState([]);

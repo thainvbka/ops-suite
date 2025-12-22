@@ -1,6 +1,10 @@
 const pool = require("../config/db");
 const dataSourceManager = require("../datasource/manager");
-const { extractLatestValue, evaluateCondition } = require("../utils/helpers");
+const {
+  extractLatestValue,
+  evaluateCondition,
+  parseFrequencyToMs,
+} = require("../utils/helpers");
 
 const evaluateAlert = async (alert) => {
   try {
@@ -71,9 +75,26 @@ const evaluateAlert = async (alert) => {
 
 const evaluateAllAlerts = async () => {
   try {
-    const alerts = await pool.query("SELECT * FROM alerts");
+    const alerts = await pool.query(
+      "SELECT * FROM alerts WHERE COALESCE(is_enabled, TRUE) = TRUE"
+    );
+    const now = new Date();
+
     for (const alert of alerts.rows) {
+      const freqMs = parseFrequencyToMs(alert.frequency || "1m");
+      const lastEval = alert.last_evaluated_at
+        ? new Date(alert.last_evaluated_at).getTime()
+        : 0;
+
+      if (lastEval && now.getTime() - lastEval < freqMs) {
+        continue; // skip until next window
+      }
+
       await evaluateAlert(alert);
+      await pool.query(
+        "UPDATE alerts SET last_evaluated_at = $1 WHERE id = $2",
+        [now, alert.id]
+      );
     }
   } catch (err) {
     console.error("Evaluate alerts error:", err);

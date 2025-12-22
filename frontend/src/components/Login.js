@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../api';
 
 function Login({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -23,7 +24,7 @@ function Login({ onLoginSuccess }) {
         ? { username: formData.username, password: formData.password }
         : formData;
 
-      const response = await axios.post(`http://localhost:4000${endpoint}`, data);
+      const response = await axios.post(`${API_URL.replace(/\/api$/, '')}${endpoint}`, data);
 
       if (isLogin) {
         // Save token and user info
