@@ -119,25 +119,53 @@ router.post("/", authenticateToken, async (req, res) => {
 
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
-    const { name, message, state, frequency, conditions, notifications } =
+    const { name, message, state, frequency, conditions, notifications, is_enabled } =
       req.body;
 
     const result = await pool.query(
-      "UPDATE alerts SET name = $1, message = $2, state = $3, frequency = $4, conditions = $5, notifications = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *",
+      "UPDATE alerts SET name = COALESCE($1, name), message = COALESCE($2, message), state = COALESCE($3, state), frequency = COALESCE($4, frequency), conditions = COALESCE($5, conditions), notifications = COALESCE($6, notifications), is_enabled = COALESCE($7, is_enabled), updated_at = CURRENT_TIMESTAMP WHERE id = $8 RETURNING *",
       [
         name,
         message,
-        state || "pending",
+        state,
         frequency,
-        typeof conditions === 'string' ? conditions : JSON.stringify(conditions || {}),
-        typeof notifications === 'string' ? notifications : JSON.stringify(notifications || []),
+        typeof conditions === 'string' ? conditions : (conditions ? JSON.stringify(conditions) : null),
+        typeof notifications === 'string' ? notifications : (notifications ? JSON.stringify(notifications) : null),
+        is_enabled,
         req.params.id,
       ]
     );
 
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Alert not found" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
+    console.error("Failed to update alert:", err);
     res.status(500).json({ error: "Failed to update alert" });
+  }
+});
+
+// Toggle alert enabled/disabled
+router.patch("/:id/toggle", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE alerts SET is_enabled = NOT is_enabled, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Alert not found" });
+    }
+
+    const alert = result.rows[0];
+    console.log(`[alerts] Alert ${alert.id} (${alert.name}) ${alert.is_enabled ? 'enabled' : 'disabled'}`);
+
+    res.json(alert);
+  } catch (err) {
+    console.error("Failed to toggle alert:", err);
+    res.status(500).json({ error: "Failed to toggle alert" });
   }
 });
 

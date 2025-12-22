@@ -182,29 +182,31 @@ const evaluateAlert = async (alert) => {
 
     const newState = isFiring ? 'alerting' : 'ok';
     const prevState = alert.state || 'pending';
-    const now = new Date();
 
     // Record history if alerting
     if (isFiring) {
       await pool.query(
         `INSERT INTO alert_history
          (alert_id, state, message, value, threshold, triggered_at)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [alert.id, newState, alert.message || '', value, alert.threshold, now]
+         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
+        [alert.id, newState, alert.message || '', value, alert.threshold]
       );
     }
 
-    // Update alert state if changed
-    if (newState !== prevState) {
-      console.log(`[alert] State change: ${prevState} -> ${newState}`);
+    // Update alert state and last_triggered
+    // Update last_triggered whenever alert is firing (not just on state change)
+    if (newState !== prevState || isFiring) {
+      if (newState !== prevState) {
+        console.log(`[alert] State change: ${prevState} -> ${newState}`);
+      }
 
       await pool.query(
         `UPDATE alerts 
          SET state = $1, 
-             last_triggered = $2,
+             last_triggered = CASE WHEN $2 THEN CURRENT_TIMESTAMP ELSE last_triggered END,
              updated_at = CURRENT_TIMESTAMP 
          WHERE id = $3`,
-        [newState, isFiring ? now : alert.last_triggered, alert.id]
+        [newState, isFiring, alert.id]
       );
 
       // Send notifications on state change
@@ -228,20 +230,21 @@ const evaluateAlert = async (alert) => {
           state: newState,
           value: value,
           threshold: alert.threshold,
-          timestamp: now.toISOString()
+          timestamp: new Date().toISOString()
         };
 
         try {
           await notificationService.sendToChannels(channelIds, payload);
           console.log('[alert] Notifications sent successfully');
 
-          // Update history with notification sent
+          // Update history with notification sent (update most recent entry)
           await pool.query(
             `UPDATE alert_history 
              SET notification_sent = TRUE, 
                  notification_channels = $1 
-             WHERE alert_id = $2 AND triggered_at = $3`,
-            [JSON.stringify(channelIds), alert.id, now]
+             WHERE alert_id = $2 
+               AND id = (SELECT id FROM alert_history WHERE alert_id = $2 ORDER BY triggered_at DESC LIMIT 1)`,
+            [JSON.stringify(channelIds), alert.id]
           );
         } catch (err) {
           console.error('[alert] Failed to send notifications:', err);
@@ -285,8 +288,8 @@ const evaluateAllAlerts = async () => {
 
       // Update last evaluated time
       await pool.query(
-        "UPDATE alerts SET last_evaluated_at = $1 WHERE id = $2",
-        [now, alert.id]
+        "UPDATE alerts SET last_evaluated_at = CURRENT_TIMESTAMP WHERE id = $1",
+        [alert.id]
       );
     }
   } catch (err) {

@@ -160,10 +160,34 @@ class NotificationService {
             method: config.method || 'POST',
             url: config.url,
             headers: config.headers || { 'Content-Type': 'application/json' },
-            data: webhookPayload
+            data: webhookPayload,
+            timeout: 10000 // 10 second timeout
         };
 
-        await axios(options);
+        try {
+            const response = await axios(options);
+            return response;
+        } catch (err) {
+            // Handle different HTTP error codes
+            if (err.response) {
+                const status = err.response.status;
+                if (status === 429) {
+                    throw new Error(`Webhook rate limit exceeded. Please wait before sending more requests or upgrade your webhook service.`);
+                } else if (status === 404) {
+                    throw new Error(`Webhook URL not found (404). Please check the webhook configuration.`);
+                } else if (status >= 500) {
+                    throw new Error(`Webhook server error (${status}). The webhook service may be down.`);
+                } else if (status >= 400) {
+                    throw new Error(`Webhook client error (${status}). Please check your webhook configuration.`);
+                } else {
+                    throw new Error(`Webhook request failed with status ${status}`);
+                }
+            } else if (err.request) {
+                throw new Error(`Webhook request failed: No response from server. Please check the URL and network connection.`);
+            } else {
+                throw new Error(`Webhook request failed: ${err.message}`);
+            }
+        }
     }
 
     /**

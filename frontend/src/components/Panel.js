@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
   BarChart,
@@ -13,7 +11,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import axios from 'axios';
@@ -321,7 +318,7 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
 
               <button
                 className="panel-btn"
-                onClick={() => onRemove(panel.id)}
+                onClick={() => onRemove()}
                 title="Delete"
                 aria-label="Delete"
               >

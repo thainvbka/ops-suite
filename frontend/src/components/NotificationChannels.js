@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../api';
+import ConfirmDialog from './ConfirmDialog';
 
 function NotificationChannels() {
     const [channels, setChannels] = useState([]);
     const [showEditor, setShowEditor] = useState(false);
     const [selectedChannel, setSelectedChannel] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
+    const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null });
 
     useEffect(() => {
         fetchChannels();
@@ -26,19 +28,26 @@ function NotificationChannels() {
         }
     };
 
-    const deleteChannel = async (id) => {
-        if (!window.confirm('Delete this notification channel?')) return;
-
-        try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/notification-channels/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchChannels();
-        } catch (err) {
-            console.error('Error deleting channel:', err);
-            alert('Failed to delete channel');
-        }
+    const deleteChannel = async (id, channelName) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Delete Notification Channel?',
+            message: `Are you sure you want to delete the channel "${channelName}"? This will remove it from all alerts.`,
+            type: 'danger',
+            confirmText: 'Delete Channel',
+            onConfirm: async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    await axios.delete(`${API_URL}/notification-channels/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    fetchChannels();
+                } catch (err) {
+                    console.error('Error deleting channel:', err);
+                    alert('Failed to delete channel');
+                }
+            }
+        });
     };
 
     const testChannel = async (id) => {
@@ -121,7 +130,7 @@ function NotificationChannels() {
                                 }}>
                                     Edit
                                 </button>
-                                <button className="btn btn-danger" onClick={() => deleteChannel(channel.id)}>
+                                <button className="btn btn-danger" onClick={() => deleteChannel(channel.id, channel.name)}>
                                     Delete
                                 </button>
                             </div>
@@ -144,6 +153,16 @@ function NotificationChannels() {
                     }}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                type={confirmDialog.type || 'danger'}
+                confirmText={confirmDialog.confirmText || 'Confirm'}
+            />
         </div>
     );
 }

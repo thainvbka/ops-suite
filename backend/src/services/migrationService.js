@@ -50,6 +50,10 @@ async function runMigrations() {
         alert_id INTEGER REFERENCES alerts(id) ON DELETE CASCADE,
         state VARCHAR(50),
         message TEXT,
+        value DOUBLE PRECISION,
+        threshold DOUBLE PRECISION,
+        notification_sent BOOLEAN DEFAULT FALSE,
+        notification_channels JSONB DEFAULT '[]'::jsonb,
         data JSONB,
         triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -88,6 +92,30 @@ async function runMigrations() {
         END IF;
       END $$;
     `);
+
+    // Ensure alert_history has all required columns
+    await pool.query(`
+      ALTER TABLE alert_history
+        ADD COLUMN IF NOT EXISTS value DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS threshold DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS notification_sent BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS notification_channels JSONB DEFAULT '[]'::jsonb;
+    `);
+
+    // Create notification_channels table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notification_channels (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        config JSONB NOT NULL,
+        is_enabled BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('[migration] All migrations completed successfully');
   } catch (err) {
     console.error("Migration error:", err);
   }

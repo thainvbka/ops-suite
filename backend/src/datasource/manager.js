@@ -59,8 +59,13 @@ class DataSourceManager {
       datasource = 'prometheus'
     } = options;
 
+    // Normalize datasource names (handle aliases)
+    const normalizedDatasource = datasource === 'postgresql' ? 'postgres' : datasource;
+
+    console.log(`[DataSourceManager] Query request - Original datasource: ${datasource}, Normalized: ${normalizedDatasource}`);
+
     try {
-      switch (datasource) {
+      switch (normalizedDatasource) {
         case 'prometheus':
           return await this.queryPrometheus(options);
 
@@ -68,11 +73,12 @@ class DataSourceManager {
           return await this.queryPostgreSQL(options);
 
         default:
+          console.error(`[DataSourceManager] Unsupported datasource: ${normalizedDatasource} (original: ${datasource})`);
           throw new Error(`Unsupported datasource: ${datasource}`);
       }
     } catch (error) {
-      console.error(`Error querying ${datasource}:`, error);
-      this.pushLog(datasource, `Query error: ${error.message}`, 'error');
+      console.error(`Error querying ${normalizedDatasource}:`, error);
+      this.pushLog(normalizedDatasource, `Query error: ${error.message}`, 'error');
       throw error;
     }
   }

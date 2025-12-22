@@ -13,6 +13,9 @@ import Logs from "./components/Logs";
 import AddPanelModal from "./components/AddPanelModal";
 import NotificationChannels from "./components/NotificationChannels";
 import ContainerOverview from "./components/ContainerOverview";
+import JuiceShopApp from "./components/JuiceShopApp";
+import CreateDashboardModal from "./components/CreateDashboardModal";
+import ConfirmDialog from "./components/ConfirmDialog";
 import { API_URL } from "./api";
 
 function App() {
@@ -32,6 +35,8 @@ function App() {
   const [editingPanel, setEditingPanel] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showAddPanelModal, setShowAddPanelModal] = useState(false);
+  const [showCreateDashboardModal, setShowCreateDashboardModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const [dataSources, setDataSources] = useState([]);
   // tick to ép panel refetch data
   const [refreshTick, setRefreshTick] = useState(0);
@@ -137,36 +142,41 @@ function App() {
   }, [autoRefresh, currentDashboard, token]);
 
   // Dashboard CRUD
-  const createDashboard = async () => {
-    const title = prompt('Dashboard name:');
-    if (!title) return;
-
+  const createDashboard = async (data) => {
     try {
       const res = await axios.post(`${API_URL}/dashboards`,
-        { title, description: '', tags: [] },
+        data,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDashboards([...dashboards, res.data]);
       setCurrentDashboard(res.data);
     } catch (err) {
       console.error('Error creating dashboard:', err);
+      throw err;
     }
   };
-  const deleteDashboard = async (uid) => {
-    if (!window.confirm('Delete this dashboard?')) return;
-
-    try {
-      await axios.delete(`${API_URL}/dashboards/${uid}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const remain = dashboards.filter(d => d.uid !== uid);
-      setDashboards(remain);
-      if (currentDashboard?.uid === uid) {
-        setCurrentDashboard(remain[0] || null);
+  const deleteDashboard = async (uid, dashboardName) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Dashboard?',
+      message: `Are you sure you want to delete "${dashboardName}"? This action cannot be undone and all panels will be lost.`,
+      type: 'danger',
+      confirmText: 'Delete Dashboard',
+      onConfirm: async () => {
+        try {
+          await axios.delete(`${API_URL}/dashboards/${uid}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const remain = dashboards.filter(d => d.uid !== uid);
+          setDashboards(remain);
+          if (currentDashboard?.uid === uid) {
+            setCurrentDashboard(remain[0] || null);
+          }
+        } catch (err) {
+          console.error('Error deleting dashboard:', err);
+        }
       }
-    } catch (err) {
-      console.error('Error deleting dashboard:', err);
-    }
+    });
   };
 
   // Panel helpers
@@ -202,15 +212,24 @@ function App() {
       alert('Không tạo được panel, xem log console.');
     }
   };
-  const removePanel = async (panelId) => {
-    try {
-      await axios.delete(`${API_URL}/panels/${panelId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPanels(panels.filter(p => p.id !== panelId));
-    } catch (err) {
-      console.error('Error removing panel:', err);
-    }
+  const removePanel = async (panelId, panelTitle) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Panel?',
+      message: `Are you sure you want to delete the panel "${panelTitle}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete Panel',
+      onConfirm: async () => {
+        try {
+          await axios.delete(`${API_URL}/panels/${panelId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setPanels(panels.filter(p => p.id !== panelId));
+        } catch (err) {
+          console.error('Error removing panel:', err);
+        }
+      }
+    });
   };
   const updatePanel = async (panelId, updates) => {
     try {
@@ -429,6 +448,12 @@ function App() {
                 >
                   🐳 Containers
                 </li>
+                <li
+                  className={currentPage === 'juiceshop' ? 'active' : ''}
+                  onClick={() => setCurrentPage('juiceshop')}
+                >
+                  🧃 Juice Shop
+                </li>
               </ul>
             </div>
 
@@ -436,7 +461,7 @@ function App() {
               <>
                 <div className="sidebar-section">
                   <h3>Dashboards</h3>
-                  <button className="btn-primary" onClick={createDashboard}>
+                  <button className="btn-primary" onClick={() => setShowCreateDashboardModal(true)}>
                     + New Dashboard
                   </button>
                   <ul className="dashboard-list">
@@ -453,9 +478,7 @@ function App() {
                           aria-label={`Xóa dashboard ${d.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm(`Xóa dashboard "${d.title}"?`)) {
-                              deleteDashboard(d.uid);
-                            }
+                            deleteDashboard(d.uid, d.title);
                           }}
                         >
                           {/* Trash icon (SVG inline, khỏi cài lib) */}
@@ -528,7 +551,7 @@ function App() {
                       panel={panel}
                       timeRange={timeRange}
                       refreshTick={refreshTick}
-                      onRemove={removePanel}
+                      onRemove={() => removePanel(panel.id, panel.title)}
                       onEdit={(p) => {
                         setEditingPanel(p);
                         setShowQueryEditor(true);
@@ -548,6 +571,8 @@ function App() {
             <Logs token={token} />
           ) : currentPage === 'containers' ? (
             <ContainerOverview token={token} />
+          ) : currentPage === 'juiceshop' ? (
+            <JuiceShopApp token={token} />
           ) : (
             <div className="empty-state">
               <h2>No dashboard selected</h2>
@@ -580,6 +605,25 @@ function App() {
         onCreate={handleCreatePanelFromPreset}
       />
 
+      {/* Create Dashboard Modal */}
+      <CreateDashboardModal
+        isOpen={showCreateDashboardModal}
+        onClose={() => setShowCreateDashboardModal(false)}
+        onCreate={createDashboard}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type || 'danger'}
+        confirmText={confirmDialog.confirmText || 'Confirm'}
+        cancelText={confirmDialog.cancelText || 'Cancel'}
+      />
+
       {showAccountModal && (
         <AccountModal
           onClose={() => setShowAccountModal(false)}
@@ -602,14 +646,46 @@ function AccountModal({ onClose, token, user }) {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Password strength calculation
+  const getPasswordStrength = (password) => {
+    if (!password) return { score: 0, label: '', color: '' };
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const strengths = {
+      0: { label: 'Too weak', color: '#ef4444' },
+      1: { label: 'Weak', color: '#f59e0b' },
+      2: { label: 'Fair', color: '#eab308' },
+      3: { label: 'Good', color: '#84cc16' },
+      4: { label: 'Strong', color: '#22c55e' },
+      5: { label: 'Very Strong', color: '#10b981' }
+    };
+
+    return { score, ...strengths[score] };
+  };
+
+  const passwordStrength = getPasswordStrength(newPassword);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('');
     setError('');
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError('New password and confirmation do not match');
       return;
     }
+
     try {
       setLoading(true);
       await axios.post(
@@ -617,10 +693,13 @@ function AccountModal({ onClose, token, user }) {
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setStatus('Password changed successfully');
+      setStatus('Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+
+      // Auto close after 2 seconds on success
+      setTimeout(() => onClose(), 2000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to change password');
     } finally {
@@ -629,81 +708,236 @@ function AccountModal({ onClose, token, user }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="query-editor-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Account</h3>
-          <p className="modal-subtitle">
-            Logged in as <strong>{user?.username}</strong> ({user?.email})
-          </p>
-
-          <button className="close-btn" onClick={onClose}>✕</button>
+    <div className="account-modal-overlay" onClick={onClose}>
+      <div className="account-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="account-modal-header">
+          <div className="account-info">
+            <div className="user-avatar">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="24" fill="url(#avatarGradient)" />
+                <text x="24" y="29" textAnchor="middle" fill="white" fontSize="20" fontWeight="600">
+                  {user?.username?.[0]?.toUpperCase() || 'U'}
+                </text>
+                <defs>
+                  <linearGradient id="avatarGradient" x1="0" y1="0" x2="48" y2="48">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div className="user-details">
+              <h2>{user?.username}</h2>
+              <p>{user?.email}</p>
+            </div>
+          </div>
+          <button className="account-close-btn" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
-        <div className="modal-body">
-          <form onSubmit={handleSubmit}>
-            <div className="editor-section">
-              <h4>Current Password</h4>
-              <input
-                type={showCurrent ? 'text' : 'password'}
-                className="editor-select"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-              <div className="inline-actions">
+
+        {/* Body */}
+        <div className="account-modal-body">
+          <h3 className="section-title">Change Password</h3>
+
+          <form onSubmit={handleSubmit} className="password-form">
+            {/* Current Password */}
+            <div className="password-field">
+              <label>Current Password</label>
+              <div className="password-input-wrapper">
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" strokeWidth="2" />
+                </svg>
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
                 <button
                   type="button"
-                  className="btn"
-                  onClick={() => setShowCurrent((prev) => !prev)}
+                  className="toggle-password"
+                  onClick={() => setShowCurrent(!showCurrent)}
                 >
-                  {showCurrent ? 'Hide' : 'Show'}
+                  {showCurrent ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                      <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
-            <div className="editor-section">
-              <h4>New Password</h4>
-              <input
-                type={showNew ? 'text' : 'password'}
-                className="editor-select"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-              <div className="inline-actions">
+
+            {/* New Password */}
+            <div className="password-field">
+              <label>New Password</label>
+              <div className="password-input-wrapper">
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" strokeWidth="2" />
+                </svg>
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                />
                 <button
                   type="button"
-                  className="btn"
-                  onClick={() => setShowNew((prev) => !prev)}
+                  className="toggle-password"
+                  onClick={() => setShowNew(!showNew)}
                 >
-                  {showNew ? 'Hide' : 'Show'}
+                  {showNew ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                      <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                    </svg>
+                  )}
                 </button>
               </div>
+
+              {/* Password Strength Indicator */}
+              {newPassword && (
+                <div className="password-strength">
+                  <div className="strength-bars">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="strength-bar"
+                        style={{
+                          background: i <= passwordStrength.score ? passwordStrength.color : '#2c2c2f'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span>
+                </div>
+              )}
+
+              {/* Password Requirements */}
+              {newPassword && (
+                <div className="password-requirements">
+                  <div className={newPassword.length >= 8 ? 'requirement-met' : 'requirement'}>
+                    {newPassword.length >= 8 ? '✓' : '○'} At least 8 characters
+                  </div>
+                  <div className={/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? 'requirement-met' : 'requirement'}>
+                    {/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? '✓' : '○'} Upper & lowercase
+                  </div>
+                  <div className={/\d/.test(newPassword) ? 'requirement-met' : 'requirement'}>
+                    {/\d/.test(newPassword) ? '✓' : '○'} Numbers
+                  </div>
+                  <div className={/[^a-zA-Z0-9]/.test(newPassword) ? 'requirement-met' : 'requirement'}>
+                    {/[^a-zA-Z0-9]/.test(newPassword) ? '✓' : '○'} Special characters
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="editor-section">
-              <h4>Confirm New Password</h4>
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                className="editor-select"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              <div className="inline-actions">
+
+            {/* Confirm Password */}
+            <div className="password-field">
+              <label>Confirm New Password</label>
+              <div className="password-input-wrapper">
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 11l3 3L22 4" strokeWidth="2" strokeLinecap="round" stroke Lin ejoin="round" />
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                />
                 <button
                   type="button"
-                  className="btn"
-                  onClick={() => setShowConfirm((prev) => !prev)}
+                  className="toggle-password"
+                  onClick={() => setShowConfirm(!showConfirm)}
                 >
-                  {showConfirm ? 'Hide' : 'Show'}
+                  {showConfirm ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                      <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                    </svg>
+                  )}
                 </button>
               </div>
+              {confirmPassword && confirmPassword !== newPassword && (
+                <div className="password-mismatch">Passwords do not match</div>
+              )}
+              {confirmPassword && confirmPassword === newPassword && newPassword.length >= 8 && (
+                <div className="password-match">✓ Passwords match</div>
+              )}
             </div>
-            {error && <div className="error-banner">{error}</div>}
-            {status && <div className="success-banner">{status}</div>}
-            <div className="modal-footer">
-              <button type="button" className="btn" onClick={onClose}>Close</button>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : 'Change Password'}
+
+            {/* Error/Success Messages */}
+            {error && (
+              <div className="account-error-message">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                  <line x1="15" y1="9" x2="9" y2="15" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="9" y1="9" x2="15" y2="15" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            {status && (
+              <div className="account-success-message">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="22 4 12 14.01 9 11.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {status}
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="account-modal-actions">
+              <button type="button" className="btn-cancel" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-submit"
+                disabled={loading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+              >
+                {loading ? (
+                  <>
+                    <div className="btn-spinner"></div>
+                    Changing...
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" strokeWidth="2" />
+                      <polyline points="17 21 17 13 7 13 7 21" strokeWidth="2" />
+                      <polyline points="7 3 7 8 15 8" strokeWidth="2" />
+                    </svg>
+                    Save New Password
+                  </>
+                )}
               </button>
             </div>
           </form>

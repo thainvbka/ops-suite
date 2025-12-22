@@ -1,94 +1,191 @@
 const express = require("express");
 const authenticateToken = require("../middlewares/auth");
-const { execSync } = require("child_process");
+const http = require("http");
 
 const router = express.Router();
 
+// Docker socket path
+const DOCKER_SOCKET = process.env.DOCKER_SOCKET || "/var/run/docker.sock";
+
 /**
- * Get all containers status
+ * List all Docker containers using Docker Engine API
+ */
+async function listContainers() {
+    return new Promise((resolve, reject) => {
+        const options = {
+            socketPath: DOCKER_SOCKET,
+            path: "/containers/json?all=true",
+            method: "GET",
+        };
+
+        const req = http.request(options, (res) => {
+            let data = "";
+            res.on("data", (chunk) => {
+                data += chunk.toString();
+            });
+            res.on("end", () => {
+                try {
+                    const containers = JSON.parse(data);
+                    resolve(containers);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        });
+
+        req.on("error", (err) => {
+            reject(err);
+        });
+
+        req.end();
+    });
+}
+
+/**
+ * Get container stats using Docker Engine API
+ */
+async function getContainerStats(containerId) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            socketPath: DOCKER_SOCKET,
+            path: `/containers/${containerId}/stats?stream=false`,
+            method: "GET",
+        };
+
+        const req = http.request(options, (res) => {
+            let data = "";
+            res.on("data", (chunk) => {
+                data += chunk.toString();
+            });
+            res.on("end", () => {
+                try {
+                    const stats = JSON.parse(data);
+                    resolve(stats);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        });
+
+        req.on("error", (err) => {
+            reject(err);
+        });
+
+        req.end();
+    });
+}
+
+/**
+ * Calculate CPU percentage from Docker stats
+ */
+function calculateCpuPercent(stats) {
+    const cpuDelta = stats.cpu_stats.cpu_usage.total_usage -
+        (stats.precpu_stats.cpu_usage?.total_usage || 0);
+    const systemDelta = stats.cpu_stats.system_cpu_usage -
+        (stats.precpu_stats.system_cpu_usage || 0);
+    const onlineCpus = stats.cpu_stats.online_cpus || 1;
+
+    if (cpuDelta > 0 && systemDelta > 0) {
+        return (cpuDelta / systemDelta) * onlineCpus * 100;
+    }
+    return 0;
+}
+
+/**
+ * GET /api/containers - List all Docker containers
  */
 router.get("/", authenticateToken, async (req, res) => {
     try {
-        // Get all containers (running and stopped)
-        const psOutput = execSync(
-            'docker ps -a --format "{{.ID}}|{{.Names}}|{{.Status}}|{{.State}}|{{.Image}}"',
-            { encoding: "utf-8", maxBuffer: 5 * 1024 * 1024 }
-        );
+        const containers = await listContainers();
 
-        const containers = psOutput
-            .trim()
-            .split("\n")
-            .filter(line => line.trim())
-            .map(line => {
-                const [id, name, status, state, image] = line.split("|");
+        // Transform Docker API response to match expected format
+        const formattedContainers = containers.map((container) => {
+            const state = container.State;
+            const status = container.Status || "";
 
-                // Parse uptime from status
-                const uptimeMatch = status.match(/Up (.+?)(?:\s+\(|$)/);
-                const uptime = uptimeMatch ? uptimeMatch[1] : null;
+            // Determine health based on state and status
+            let health = "unknown";
+            if (state === "running") {
+                if (status.includes("(healthy)")) health = "healthy";
+                else if (status.includes("(unhealthy)")) health = "unhealthy";
+                else if (status.includes("(starting)")) health = "starting";
+                else health = "running";
+            } else if (state === "exited") {
+                health = "stopped";
+            } else if (state === "restarting") {
+                health = "restarting";
+            }
 
-                // Determine health
-                let health = "unknown";
-                if (state === "running") {
-                    if (status.includes("(healthy)")) health = "healthy";
-                    else if (status.includes("(unhealthy)")) health = "unhealthy";
-                    else if (status.includes("(starting)")) health = "starting";
-                    else health = "running";
-                } else if (state === "exited") {
-                    health = "stopped";
-                } else if (state === "restarting") {
-                    health = "restarting";
-                }
+            // Parse uptime from status
+            let uptime = null;
+            const uptimeMatch = status.match(/Up (.+?)(?:\s+\(|$)/);
+            if (uptimeMatch) {
+                uptime = uptimeMatch[1];
+            }
 
-                return {
-                    id: id.substring(0, 12),
-                    name,
-                    status,
-                    state,
-                    health,
-                    image,
-                    uptime
-                };
-            });
+            return {
+                id: container.Id.substring(0, 12),
+                name: container.Names[0].replace("/", ""),
+                status: status,
+                state: state,
+                health: health,
+                image: container.Image,
+                created: container.Created,
+                uptime: uptime,
+                ports: container.Ports || [],
+                labels: container.Labels || {}
+            };
+        });
 
-        // Get stats for running containers
-        try {
-            const statsOutput = execSync(
-                'docker stats --no-stream --format "{{.Container}}|{{.CPUPerc}}|{{.MemUsage}}|{{.MemPerc}}"',
-                { encoding: "utf-8", maxBuffer: 5 * 1024 * 1024, timeout: 5000 }
-            );
-
-            const statsMap = {};
-            statsOutput
-                .trim()
-                .split("\n")
-                .filter(line => line.trim())
-                .forEach(line => {
-                    const [containerId, cpu, memUsage, memPerc] = line.split("|");
-                    statsMap[containerId.substring(0, 12)] = {
-                        cpu: cpu.replace("%", ""),
-                        memUsage,
-                        memPerc: memPerc.replace("%", "")
-                    };
-                });
-
-            // Merge stats with container info
-            containers.forEach(container => {
-                const stats = statsMap[container.id];
-                if (stats) {
-                    container.cpu = stats.cpu;
-                    container.memUsage = stats.memUsage;
-                    container.memPerc = stats.memPerc;
-                }
-            });
-        } catch (statsErr) {
-            console.warn("Failed to get container stats:", statsErr.message);
-        }
-
-        res.json({ containers, total: containers.length });
+        res.json({ containers: formattedContainers, total: formattedContainers.length });
     } catch (err) {
         console.error("Error fetching containers:", err);
         res.status(500).json({
             error: "Failed to fetch containers",
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/containers/:id/stats - Get container stats
+ */
+router.get("/:id/stats", authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const stats = await getContainerStats(id);
+
+        // Calculate metrics
+        const cpuPercent = calculateCpuPercent(stats);
+        const memoryUsage = stats.memory_stats.usage || 0;
+        const memoryLimit = stats.memory_stats.limit || 0;
+        const memoryPercent = memoryLimit > 0
+            ? (memoryUsage / memoryLimit) * 100
+            : 0;
+
+        // Network stats
+        let networkRx = 0;
+        let networkTx = 0;
+        if (stats.networks) {
+            Object.values(stats.networks).forEach((network) => {
+                networkRx += network.rx_bytes || 0;
+                networkTx += network.tx_bytes || 0;
+            });
+        }
+
+        res.json({
+            cpu_percent: cpuPercent.toFixed(2),
+            memory_usage: memoryUsage,
+            memory_limit: memoryLimit,
+            memory_percent: memoryPercent.toFixed(2),
+            network_rx: networkRx,
+            network_tx: networkTx,
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error("Error fetching container stats:", err);
+        res.status(500).json({
+            error: "Failed to fetch container stats",
             message: err.message
         });
     }

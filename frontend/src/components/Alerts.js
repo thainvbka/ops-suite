@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../api';
+import ConfirmDialog from './ConfirmDialog';
 
 function Alerts() {
   const [alerts, setAlerts] = useState([]);
   const [showEditor, setShowEditor] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null });
   const [historyModal, setHistoryModal] = useState({ open: false, items: [] });
   const [historyPage, setHistoryPage] = useState(1);
   const historyPageSize = 20;
@@ -29,18 +31,25 @@ function Alerts() {
     }
   };
 
-  const deleteAlert = async (id) => {
-    if (!window.confirm('Delete this alert?')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/alerts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchAlerts();
-    } catch (err) {
-      console.error('Error deleting alert:', err);
-    }
+  const deleteAlert = async (id, alertName) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Alert?',
+      message: `Are you sure you want to delete the alert "${alertName}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete Alert',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          await axios.delete(`${API_URL}/alerts/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          fetchAlerts();
+        } catch (err) {
+          console.error('Error deleting alert:', err);
+        }
+      }
+    });
   };
 
   const viewHistory = async (id) => {
@@ -69,15 +78,6 @@ function Alerts() {
     } catch (err) {
       console.error('Error toggling alert:', err);
       alert('Failed to toggle alert');
-    }
-  };
-
-  const getStateColor = (state) => {
-    switch (state) {
-      case 'ok': return '#10b981';
-      case 'alerting': return '#ef4444';
-      case 'pending': return '#f59e0b';
-      default: return '#6b7280';
     }
   };
 
@@ -138,7 +138,7 @@ function Alerts() {
                   Edit
                 </button>
                 <button className="btn" onClick={() => viewHistory(alert.id)}>View History</button>
-                <button className="btn" onClick={() => deleteAlert(alert.id)}>
+                <button className="btn" onClick={() => deleteAlert(alert.id, alert.name)}>
                   Delete
                 </button>
               </div>
@@ -219,6 +219,16 @@ function Alerts() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type || 'danger'}
+        confirmText={confirmDialog.confirmText || 'Confirm'}
+      />
     </div>
   );
 }
@@ -227,7 +237,6 @@ function AlertEditor({ alert, onClose, onSave }) {
   const [dashboards, setDashboards] = useState([]);
   const [panels, setPanels] = useState([]);
   const [channels, setChannels] = useState([]);
-  const [selectedDashboard, setSelectedDashboard] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [formData, setFormData] = useState(() => {
@@ -287,11 +296,9 @@ function AlertEditor({ alert, onClose, onSave }) {
     const dashId = formData.dashboardId;
     if (!dashId) {
       setPanels([]);
-      setSelectedDashboard(null);
       return;
     }
     const dashObj = dashboards.find((d) => String(d.id) === String(dashId));
-    setSelectedDashboard(dashObj || null);
     const fetchPanels = async () => {
       try {
         const targetId = dashObj?.uid || dashId;
