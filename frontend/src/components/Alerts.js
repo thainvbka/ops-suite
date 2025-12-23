@@ -315,6 +315,20 @@ function AlertEditor({ alert, onClose, onSave }) {
       : [];
     const [param0, param1] = params;
 
+    // Parse notifications if it's a string (from database)
+    let notifications = alert?.notifications || [];
+    if (typeof notifications === "string") {
+      try {
+        notifications = JSON.parse(notifications);
+      } catch (e) {
+        console.error("Failed to parse notifications:", e);
+        notifications = [];
+      }
+    }
+    if (!Array.isArray(notifications)) {
+      notifications = [];
+    }
+
     return {
       name: alert?.name || "",
       message: alert?.message || "",
@@ -324,7 +338,7 @@ function AlertEditor({ alert, onClose, onSave }) {
       thresholdMax: param1 !== undefined ? param1 : "",
       dashboardId: alert?.dashboard_id || "",
       panelId: alert?.panel_id || "",
-      notifications: alert?.notifications || [],
+      notifications,
     };
   });
 
