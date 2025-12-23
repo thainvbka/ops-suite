@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import GridLayout from 'react-grid-layout';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+import GridLayout from "react-grid-layout";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
 import axios from "axios";
 import "./App.css";
 import Login from "./components/Login";
-import TimeRangePicker from './components/TimeRangePicker';
-import Panel from './components/Panel';
-import QueryEditor from './components/QueryEditor';
+import TimeRangePicker from "./components/TimeRangePicker";
+import Panel from "./components/Panel";
+import QueryEditor from "./components/QueryEditor";
 import Alerts from "./components/Alerts";
 import Logs from "./components/Logs";
 import AddPanelModal from "./components/AddPanelModal";
@@ -17,6 +17,20 @@ import JuiceShopApp from "./components/JuiceShopApp";
 import CreateDashboardModal from "./components/CreateDashboardModal";
 import ConfirmDialog from "./components/ConfirmDialog";
 import { API_URL } from "./api";
+import {
+  Menu,
+  LayoutDashboard,
+  Bell,
+  Radio,
+  FileText,
+  Container,
+  Droplet,
+  Plus,
+  Database,
+  Activity,
+  Check,
+  Circle,
+} from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,14 +43,20 @@ function App() {
   const [currentDashboard, setCurrentDashboard] = useState(null);
   const [panels, setPanels] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [timeRange, setTimeRange] = useState({ from: 'now-1h', to: 'now' });
+  const [timeRange, setTimeRange] = useState({ from: "now-1h", to: "now" });
   const [autoRefresh, setAutoRefresh] = useState(null);
   const [showQueryEditor, setShowQueryEditor] = useState(false);
   const [editingPanel, setEditingPanel] = useState(null);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState("dashboard");
   const [showAddPanelModal, setShowAddPanelModal] = useState(false);
-  const [showCreateDashboardModal, setShowCreateDashboardModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+  const [showCreateDashboardModal, setShowCreateDashboardModal] =
+    useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    onConfirm: null,
+    title: "",
+    message: "",
+  });
   const [dataSources, setDataSources] = useState([]);
   // tick to ép panel refetch data
   const [refreshTick, setRefreshTick] = useState(0);
@@ -55,7 +75,7 @@ function App() {
     setToken(userToken);
   };
 
-  //Logout API 
+  //Logout API
   const handleLogout = useCallback(async () => {
     try {
       await axios.post(
@@ -79,14 +99,14 @@ function App() {
   const fetchDashboards = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/dashboards`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setDashboards(res.data.dashboards);
       if (res.data.dashboards.length > 0 && !currentDashboard) {
         setCurrentDashboard(res.data.dashboards[0]);
       }
     } catch (err) {
-      console.error('Error fetching dashboards:', err);
+      console.error("Error fetching dashboards:", err);
       if (err.response?.status === 401) {
         handleLogout();
       }
@@ -96,25 +116,28 @@ function App() {
   const fetchDataSources = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/datasources`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setDataSources(res.data.datasources || []);
     } catch (err) {
-      console.error('Error fetching datasources:', err);
+      console.error("Error fetching datasources:", err);
     }
   }, [token]);
 
-  const fetchPanels = useCallback(async (dashboardUid) => {
-    if (!dashboardUid) return;
-    try {
-      const res = await axios.get(`${API_URL}/dashboards/${dashboardUid}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPanels(res.data.panels || []);
-    } catch (err) {
-      console.error('Error fetching panels:', err);
-    }
-  }, [token]);
+  const fetchPanels = useCallback(
+    async (dashboardUid) => {
+      if (!dashboardUid) return;
+      try {
+        const res = await axios.get(`${API_URL}/dashboards/${dashboardUid}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPanels(res.data.panels || []);
+      } catch (err) {
+        console.error("Error fetching panels:", err);
+      }
+    },
+    [token]
+  );
 
   // Fetch dashboards when logged in
   useEffect(() => {
@@ -144,38 +167,37 @@ function App() {
   // Dashboard CRUD
   const createDashboard = async (data) => {
     try {
-      const res = await axios.post(`${API_URL}/dashboards`,
-        data,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post(`${API_URL}/dashboards`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setDashboards([...dashboards, res.data]);
       setCurrentDashboard(res.data);
     } catch (err) {
-      console.error('Error creating dashboard:', err);
+      console.error("Error creating dashboard:", err);
       throw err;
     }
   };
   const deleteDashboard = async (uid, dashboardName) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Delete Dashboard?',
+      title: "Delete Dashboard?",
       message: `Are you sure you want to delete "${dashboardName}"? This action cannot be undone and all panels will be lost.`,
-      type: 'danger',
-      confirmText: 'Delete Dashboard',
+      type: "danger",
+      confirmText: "Delete Dashboard",
       onConfirm: async () => {
         try {
           await axios.delete(`${API_URL}/dashboards/${uid}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
-          const remain = dashboards.filter(d => d.uid !== uid);
+          const remain = dashboards.filter((d) => d.uid !== uid);
           setDashboards(remain);
           if (currentDashboard?.uid === uid) {
             setCurrentDashboard(remain[0] || null);
           }
         } catch (err) {
-          console.error('Error deleting dashboard:', err);
+          console.error("Error deleting dashboard:", err);
         }
-      }
+      },
     });
   };
 
@@ -188,17 +210,17 @@ function App() {
     if (!currentDashboard) return;
     const newPanelPayload = {
       title: preset.title,
-      type: preset.type || 'graph',
+      type: preset.type || "graph",
       position: { x: 0, y: 0, w: 6, h: 4 },
       datasource: preset.datasource,
       targets: [
         {
-          refId: 'A',
+          refId: "A",
           datasource: preset.datasource,
-          query: preset.query
-        }
+          query: preset.query,
+        },
       ],
-      options: {}
+      options: {},
     };
     try {
       const res = await axios.post(
@@ -206,51 +228,51 @@ function App() {
         newPanelPayload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPanels(prev => [...prev, res.data]);
+      setPanels((prev) => [...prev, res.data]);
     } catch (err) {
-      console.error('Error adding panel:', err);
-      alert('Không tạo được panel, xem log console.');
+      console.error("Error adding panel:", err);
+      alert("Không tạo được panel, xem log console.");
     }
   };
   const removePanel = async (panelId, panelTitle) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Delete Panel?',
+      title: "Delete Panel?",
       message: `Are you sure you want to delete the panel "${panelTitle}"? This action cannot be undone.`,
-      type: 'danger',
-      confirmText: 'Delete Panel',
+      type: "danger",
+      confirmText: "Delete Panel",
       onConfirm: async () => {
         try {
           await axios.delete(`${API_URL}/panels/${panelId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
-          setPanels(panels.filter(p => p.id !== panelId));
+          setPanels(panels.filter((p) => p.id !== panelId));
         } catch (err) {
-          console.error('Error removing panel:', err);
+          console.error("Error removing panel:", err);
         }
-      }
+      },
     });
   };
   const updatePanel = async (panelId, updates) => {
     try {
-      const existing = panels.find(p => p.id === panelId);
+      const existing = panels.find((p) => p.id === panelId);
       const payload = existing ? { ...existing, ...updates } : updates;
       const res = await axios.put(`${API_URL}/panels/${panelId}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setPanels(panels.map(p => (p.id === panelId ? res.data : p)));
+      setPanels(panels.map((p) => (p.id === panelId ? res.data : p)));
     } catch (err) {
-      console.error('Error updating panel:', err);
+      console.error("Error updating panel:", err);
     }
   };
 
   const onLayoutChange = (layout) => {
-    layout.forEach(item => {
-      const panel = panels.find(p => p.id.toString() === item.i);
+    layout.forEach((item) => {
+      const panel = panels.find((p) => p.id.toString() === item.i);
       if (panel) {
         updatePanel(panel.id, {
           ...panel,
-          position: { x: item.x, y: item.y, w: item.w, h: item.h }
+          position: { x: item.x, y: item.y, w: item.w, h: item.h },
         });
       }
     });
@@ -262,22 +284,23 @@ function App() {
       fetchPanels(currentDashboard.uid);
     }
     // ép mọi panel refetch data
-    setRefreshTick(prev => prev + 1);
+    setRefreshTick((prev) => prev + 1);
   };
-
 
   //show login page if not authenticated
   if (!user || !token) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-
   return (
     <div className="app">
       <nav className="navbar">
         <div className="navbar-left">
-          <button className="menu-btn" onClick={() => setShowSidebar(!showSidebar)}>
-            ☰
+          <button
+            className="menu-btn"
+            onClick={() => setShowSidebar(!showSidebar)}
+          >
+            <Menu size={20} />
           </button>
           <div className="logo">
             <img src="/logo.svg" alt="Gauge" />
@@ -286,32 +309,36 @@ function App() {
         </div>
 
         <div className="navbar-center">
-          {currentPage === 'dashboard' && (
+          {currentPage === "dashboard" && (
             <select
               className="dashboard-select"
-              value={currentDashboard?.uid || ''}
+              value={currentDashboard?.uid || ""}
               onChange={(e) => {
-                const dash = dashboards.find(d => d.uid === e.target.value);
+                const dash = dashboards.find((d) => d.uid === e.target.value);
                 setCurrentDashboard(dash);
               }}
             >
               <option value="">Select Dashboard</option>
-              {dashboards.map(d => (
-                <option key={d.uid} value={d.uid}>{d.title}</option>
+              {dashboards.map((d) => (
+                <option key={d.uid} value={d.uid}>
+                  {d.title}
+                </option>
               ))}
             </select>
           )}
         </div>
 
         <div className="navbar-right">
-          {currentPage === 'dashboard' && (
+          {currentPage === "dashboard" && (
             <>
               <TimeRangePicker value={timeRange} onChange={setTimeRange} />
               <select
                 className="refresh-select"
-                value={autoRefresh || ''}
+                value={autoRefresh || ""}
                 onChange={(e) =>
-                  setAutoRefresh(e.target.value ? parseInt(e.target.value) : null)
+                  setAutoRefresh(
+                    e.target.value ? parseInt(e.target.value) : null
+                  )
                 }
               >
                 <option value="">Off</option>
@@ -419,56 +446,61 @@ function App() {
               <h3>Navigation</h3>
               <ul className="sidebar-nav">
                 <li
-                  className={currentPage === 'dashboard' ? 'active' : ''}
-                  onClick={() => setCurrentPage('dashboard')}
+                  className={currentPage === "dashboard" ? "active" : ""}
+                  onClick={() => setCurrentPage("dashboard")}
                 >
-                  📊 Dashboards
+                  <LayoutDashboard size={18} /> Dashboards
                 </li>
                 <li
-                  className={currentPage === 'alerts' ? 'active' : ''}
-                  onClick={() => setCurrentPage('alerts')}
+                  className={currentPage === "alerts" ? "active" : ""}
+                  onClick={() => setCurrentPage("alerts")}
                 >
-                  🔔 Alerts
+                  <Bell size={18} /> Alerts
                 </li>
                 <li
-                  className={currentPage === 'channels' ? 'active' : ''}
-                  onClick={() => setCurrentPage('channels')}
+                  className={currentPage === "channels" ? "active" : ""}
+                  onClick={() => setCurrentPage("channels")}
                 >
-                  📣 Notification Channels
+                  <Radio size={18} /> Notification Channels
                 </li>
                 <li
-                  className={currentPage === 'logs' ? 'active' : ''}
-                  onClick={() => setCurrentPage('logs')}
+                  className={currentPage === "logs" ? "active" : ""}
+                  onClick={() => setCurrentPage("logs")}
                 >
-                  📄 Logs
+                  <FileText size={18} /> Logs
                 </li>
                 <li
-                  className={currentPage === 'containers' ? 'active' : ''}
-                  onClick={() => setCurrentPage('containers')}
+                  className={currentPage === "containers" ? "active" : ""}
+                  onClick={() => setCurrentPage("containers")}
                 >
-                  🐳 Containers
+                  <Container size={18} /> Containers
                 </li>
                 <li
-                  className={currentPage === 'juiceshop' ? 'active' : ''}
-                  onClick={() => setCurrentPage('juiceshop')}
+                  className={currentPage === "juiceshop" ? "active" : ""}
+                  onClick={() => setCurrentPage("juiceshop")}
                 >
-                  🧃 Juice Shop
+                  <Droplet size={18} /> Juice Shop
                 </li>
               </ul>
             </div>
 
-            {currentPage === 'dashboard' && (
+            {currentPage === "dashboard" && (
               <>
                 <div className="sidebar-section">
                   <h3>Dashboards</h3>
-                  <button className="btn-primary" onClick={() => setShowCreateDashboardModal(true)}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => setShowCreateDashboardModal(true)}
+                  >
                     + New Dashboard
                   </button>
                   <ul className="dashboard-list">
-                    {dashboards.map(d => (
+                    {dashboards.map((d) => (
                       <li
                         key={d.uid}
-                        className={currentDashboard?.uid === d.uid ? 'active' : ''}
+                        className={
+                          currentDashboard?.uid === d.uid ? "active" : ""
+                        }
                         onClick={() => setCurrentDashboard(d)}
                       >
                         <span>{d.title}</span>
@@ -482,7 +514,14 @@ function App() {
                           }}
                         >
                           {/* Trash icon (SVG inline, khỏi cài lib) */}
-                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <path d="M3 6h18" />
                             <path d="M8 6V4h8v2" />
                             <path d="M6 6l1 16h10l1-16" />
@@ -503,7 +542,13 @@ function App() {
                     )}
                     {dataSources.map((ds) => (
                       <li key={ds.id}>
-                        {ds.type === 'postgres' ? '2.' : ds.type === 'prometheus' ? '1.' : 'PLUG'}{' '}
+                        {ds.type === "postgres" ? (
+                          <Database size={14} />
+                        ) : ds.type === "prometheus" ? (
+                          <Activity size={14} />
+                        ) : (
+                          "PLUG"
+                        )}{" "}
                         {ds.name || ds.id}
                       </li>
                     ))}
@@ -516,13 +561,13 @@ function App() {
 
         {/* Main content */}
         <main className="dashboard-content">
-          {currentPage === 'dashboard' && currentDashboard ? (
+          {currentPage === "dashboard" && currentDashboard ? (
             <>
               <div className="dashboard-header">
                 <h2>{currentDashboard.title}</h2>
                 <div className="dashboard-controls">
                   <button className="btn" onClick={handleOpenAddPanel}>
-                    +  Add Panel
+                    <Plus size={16} style={{ marginRight: "4px" }} /> Add Panel
                   </button>
                 </div>
               </div>
@@ -530,14 +575,14 @@ function App() {
               {/* Dashboard Grid */}
               <GridLayout
                 className="dashboard-grid"
-                layout={panels.map(p => ({
+                layout={panels.map((p) => ({
                   i: p.id.toString(),
                   x: p.position?.x || 0,
                   y: p.position?.y || 0,
                   w: p.position?.w || 6,
                   h: p.position?.h || 4,
                   minW: 2,
-                  minH: 2
+                  minH: 2,
                 }))}
                 cols={12}
                 rowHeight={60}
@@ -545,7 +590,7 @@ function App() {
                 onLayoutChange={onLayoutChange}
                 draggableHandle=".panel-drag-handle"
               >
-                {panels.map(panel => (
+                {panels.map((panel) => (
                   <div key={panel.id.toString()}>
                     <Panel
                       panel={panel}
@@ -563,15 +608,15 @@ function App() {
                 ))}
               </GridLayout>
             </>
-          ) : currentPage === 'alerts' ? (
+          ) : currentPage === "alerts" ? (
             <Alerts />
-          ) : currentPage === 'channels' ? (
+          ) : currentPage === "channels" ? (
             <NotificationChannels token={token} />
-          ) : currentPage === 'logs' ? (
+          ) : currentPage === "logs" ? (
             <Logs token={token} />
-          ) : currentPage === 'containers' ? (
+          ) : currentPage === "containers" ? (
             <ContainerOverview token={token} />
-          ) : currentPage === 'juiceshop' ? (
+          ) : currentPage === "juiceshop" ? (
             <JuiceShopApp token={token} />
           ) : (
             <div className="empty-state">
@@ -619,9 +664,9 @@ function App() {
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        type={confirmDialog.type || 'danger'}
-        confirmText={confirmDialog.confirmText || 'Confirm'}
-        cancelText={confirmDialog.cancelText || 'Cancel'}
+        type={confirmDialog.type || "danger"}
+        confirmText={confirmDialog.confirmText || "Confirm"}
+        cancelText={confirmDialog.cancelText || "Cancel"}
       />
 
       {showAccountModal && (
@@ -636,11 +681,11 @@ function App() {
 }
 
 function AccountModal({ onClose, token, user }) {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [status, setStatus] = useState('');
-  const [error, setError] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -648,7 +693,7 @@ function AccountModal({ onClose, token, user }) {
 
   // Password strength calculation
   const getPasswordStrength = (password) => {
-    if (!password) return { score: 0, label: '', color: '' };
+    if (!password) return { score: 0, label: "", color: "" };
 
     let score = 0;
     if (password.length >= 8) score++;
@@ -658,12 +703,12 @@ function AccountModal({ onClose, token, user }) {
     if (/[^a-zA-Z0-9]/.test(password)) score++;
 
     const strengths = {
-      0: { label: 'Too weak', color: '#ef4444' },
-      1: { label: 'Weak', color: '#f59e0b' },
-      2: { label: 'Fair', color: '#eab308' },
-      3: { label: 'Good', color: '#84cc16' },
-      4: { label: 'Strong', color: '#22c55e' },
-      5: { label: 'Very Strong', color: '#10b981' }
+      0: { label: "Too weak", color: "#ef4444" },
+      1: { label: "Weak", color: "#f59e0b" },
+      2: { label: "Fair", color: "#eab308" },
+      3: { label: "Good", color: "#84cc16" },
+      4: { label: "Strong", color: "#22c55e" },
+      5: { label: "Very Strong", color: "#10b981" },
     };
 
     return { score, ...strengths[score] };
@@ -673,16 +718,16 @@ function AccountModal({ onClose, token, user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus('');
-    setError('');
+    setStatus("");
+    setError("");
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError("Password must be at least 8 characters");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and confirmation do not match');
+      setError("New password and confirmation do not match");
       return;
     }
 
@@ -693,15 +738,15 @@ function AccountModal({ onClose, token, user }) {
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setStatus('Password changed successfully!');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setStatus("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
 
       // Auto close after 2 seconds on success
       setTimeout(() => onClose(), 2000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to change password');
+      setError(err.response?.data?.error || "Failed to change password");
     } finally {
       setLoading(false);
     }
@@ -716,11 +761,24 @@ function AccountModal({ onClose, token, user }) {
             <div className="user-avatar">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                 <circle cx="24" cy="24" r="24" fill="url(#avatarGradient)" />
-                <text x="24" y="29" textAnchor="middle" fill="white" fontSize="20" fontWeight="600">
-                  {user?.username?.[0]?.toUpperCase() || 'U'}
+                <text
+                  x="24"
+                  y="29"
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize="20"
+                  fontWeight="600"
+                >
+                  {user?.username?.[0]?.toUpperCase() || "U"}
                 </text>
                 <defs>
-                  <linearGradient id="avatarGradient" x1="0" y1="0" x2="48" y2="48">
+                  <linearGradient
+                    id="avatarGradient"
+                    x1="0"
+                    y1="0"
+                    x2="48"
+                    y2="48"
+                  >
                     <stop offset="0%" stopColor="#3b82f6" />
                     <stop offset="100%" stopColor="#8b5cf6" />
                   </linearGradient>
@@ -733,8 +791,18 @@ function AccountModal({ onClose, token, user }) {
             </div>
           </div>
           <button className="account-close-btn" onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                d="M18 6L6 18M6 6l12 12"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -748,12 +816,27 @@ function AccountModal({ onClose, token, user }) {
             <div className="password-field">
               <label>Current Password</label>
               <div className="password-input-wrapper">
-                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
+                <svg
+                  className="input-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <rect
+                    x="3"
+                    y="11"
+                    width="18"
+                    height="11"
+                    rx="2"
+                    ry="2"
+                    strokeWidth="2"
+                  />
                   <path d="M7 11V7a5 5 0 0110 0v4" strokeWidth="2" />
                 </svg>
                 <input
-                  type={showCurrent ? 'text' : 'password'}
+                  type={showCurrent ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
@@ -765,13 +848,39 @@ function AccountModal({ onClose, token, user }) {
                   onClick={() => setShowCurrent(!showCurrent)}
                 >
                   {showCurrent ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="1"
+                        y1="1"
+                        x2="23"
+                        y2="23"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        strokeWidth="2"
+                      />
                       <circle cx="12" cy="12" r="3" strokeWidth="2" />
                     </svg>
                   )}
@@ -783,12 +892,27 @@ function AccountModal({ onClose, token, user }) {
             <div className="password-field">
               <label>New Password</label>
               <div className="password-input-wrapper">
-                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2" />
+                <svg
+                  className="input-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <rect
+                    x="3"
+                    y="11"
+                    width="18"
+                    height="11"
+                    rx="2"
+                    ry="2"
+                    strokeWidth="2"
+                  />
                   <path d="M7 11V7a5 5 0 0110 0v4" strokeWidth="2" />
                 </svg>
                 <input
-                  type={showNew ? 'text' : 'password'}
+                  type={showNew ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password"
@@ -800,13 +924,39 @@ function AccountModal({ onClose, token, user }) {
                   onClick={() => setShowNew(!showNew)}
                 >
                   {showNew ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="1"
+                        y1="1"
+                        x2="23"
+                        y2="23"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        strokeWidth="2"
+                      />
                       <circle cx="12" cy="12" r="3" strokeWidth="2" />
                     </svg>
                   )}
@@ -822,29 +972,96 @@ function AccountModal({ onClose, token, user }) {
                         key={i}
                         className="strength-bar"
                         style={{
-                          background: i <= passwordStrength.score ? passwordStrength.color : '#2c2c2f'
+                          background:
+                            i <= passwordStrength.score
+                              ? passwordStrength.color
+                              : "#2c2c2f",
                         }}
                       />
                     ))}
                   </div>
-                  <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span>
+                  <span style={{ color: passwordStrength.color }}>
+                    {passwordStrength.label}
+                  </span>
                 </div>
               )}
 
               {/* Password Requirements */}
               {newPassword && (
                 <div className="password-requirements">
-                  <div className={newPassword.length >= 8 ? 'requirement-met' : 'requirement'}>
-                    {newPassword.length >= 8 ? '✓' : '○'} At least 8 characters
+                  <div
+                    className={
+                      newPassword.length >= 8
+                        ? "requirement-met"
+                        : "requirement"
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {newPassword.length >= 8 ? (
+                      <Check size={14} />
+                    ) : (
+                      <Circle size={14} />
+                    )}{" "}
+                    At least 8 characters
                   </div>
-                  <div className={/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? 'requirement-met' : 'requirement'}>
-                    {/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? '✓' : '○'} Upper & lowercase
+                  <div
+                    className={
+                      /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword)
+                        ? "requirement-met"
+                        : "requirement"
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? (
+                      <Check size={14} />
+                    ) : (
+                      <Circle size={14} />
+                    )}{" "}
+                    Upper & lowercase
                   </div>
-                  <div className={/\d/.test(newPassword) ? 'requirement-met' : 'requirement'}>
-                    {/\d/.test(newPassword) ? '✓' : '○'} Numbers
+                  <div
+                    className={
+                      /\d/.test(newPassword) ? "requirement-met" : "requirement"
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {/\d/.test(newPassword) ? (
+                      <Check size={14} />
+                    ) : (
+                      <Circle size={14} />
+                    )}{" "}
+                    Numbers
                   </div>
-                  <div className={/[^a-zA-Z0-9]/.test(newPassword) ? 'requirement-met' : 'requirement'}>
-                    {/[^a-zA-Z0-9]/.test(newPassword) ? '✓' : '○'} Special characters
+                  <div
+                    className={
+                      /[^a-zA-Z0-9]/.test(newPassword)
+                        ? "requirement-met"
+                        : "requirement"
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {/[^a-zA-Z0-9]/.test(newPassword) ? (
+                      <Check size={14} />
+                    ) : (
+                      <Circle size={14} />
+                    )}{" "}
+                    Special characters
                   </div>
                 </div>
               )}
@@ -854,12 +1071,31 @@ function AccountModal({ onClose, token, user }) {
             <div className="password-field">
               <label>Confirm New Password</label>
               <div className="password-input-wrapper">
-                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M9 11l3 3L22 4" strokeWidth="2" strokeLinecap="round" stroke Lin ejoin="round" />
-                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  className="input-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M9 11l3 3L22 4"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    stroke
+                    Lin
+                    ejoin="round"
+                  />
+                  <path
+                    d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 <input
-                  type={showConfirm ? 'text' : 'password'}
+                  type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
@@ -871,13 +1107,39 @@ function AccountModal({ onClose, token, user }) {
                   onClick={() => setShowConfirm(!showConfirm)}
                 >
                   {showConfirm ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2" strokeLinecap="round" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="1"
+                        y1="1"
+                        x2="23"
+                        y2="23"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        strokeWidth="2"
+                      />
                       <circle cx="12" cy="12" r="3" strokeWidth="2" />
                     </svg>
                   )}
@@ -886,18 +1148,49 @@ function AccountModal({ onClose, token, user }) {
               {confirmPassword && confirmPassword !== newPassword && (
                 <div className="password-mismatch">Passwords do not match</div>
               )}
-              {confirmPassword && confirmPassword === newPassword && newPassword.length >= 8 && (
-                <div className="password-match">✓ Passwords match</div>
-              )}
+              {confirmPassword &&
+                confirmPassword === newPassword &&
+                newPassword.length >= 8 && (
+                  <div
+                    className="password-match"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Check size={14} /> Passwords match
+                  </div>
+                )}
             </div>
 
             {/* Error/Success Messages */}
             {error && (
               <div className="account-error-message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
                   <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                  <line x1="15" y1="9" x2="9" y2="15" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="9" y1="9" x2="15" y2="15" strokeWidth="2" strokeLinecap="round" />
+                  <line
+                    x1="15"
+                    y1="9"
+                    x2="9"
+                    y2="15"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1="9"
+                    y1="9"
+                    x2="15"
+                    y2="15"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
                 {error}
               </div>
@@ -905,9 +1198,25 @@ function AccountModal({ onClose, token, user }) {
 
             {status && (
               <div className="account-success-message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <polyline points="22 4 12 14.01 9 11.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M22 11.08V12a10 10 0 11-5.93-9.14"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points="22 4 12 14.01 9 11.01"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 {status}
               </div>
@@ -921,7 +1230,12 @@ function AccountModal({ onClose, token, user }) {
               <button
                 type="submit"
                 className="btn-submit"
-                disabled={loading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                disabled={
+                  loading ||
+                  !newPassword ||
+                  !confirmPassword ||
+                  newPassword !== confirmPassword
+                }
               >
                 {loading ? (
                   <>
@@ -930,9 +1244,21 @@ function AccountModal({ onClose, token, user }) {
                   </>
                 ) : (
                   <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" strokeWidth="2" />
-                      <polyline points="17 21 17 13 7 13 7 21" strokeWidth="2" />
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+                        strokeWidth="2"
+                      />
+                      <polyline
+                        points="17 21 17 13 7 13 7 21"
+                        strokeWidth="2"
+                      />
                       <polyline points="7 3 7 8 15 8" strokeWidth="2" />
                     </svg>
                     Save New Password

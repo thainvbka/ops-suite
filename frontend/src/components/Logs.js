@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { API_URL } from '../api';
+import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { API_URL } from "../api";
+import { Droplet, Globe, Info, XCircle, BarChart3 } from "lucide-react";
 
 export default function Logs({ token }) {
-  const [activeTab, setActiveTab] = useState('datasource');
+  const [activeTab, setActiveTab] = useState("datasource");
   const [dsLogs, setDsLogs] = useState([]);
   const [juiceShopLogs, setJuiceShopLogs] = useState([]);
   const [accessLogs, setAccessLogs] = useState([]);
@@ -11,48 +12,54 @@ export default function Logs({ token }) {
   const [jsLoading, setJsLoading] = useState(false);
   const [accessLoading, setAccessLoading] = useState(false);
   const [datasources, setDatasources] = useState([]);
-  const [selectedDs, setSelectedDs] = useState('');
-  const [logFilter, setLogFilter] = useState('all'); // Filter for Juice Shop logs
+  const [selectedDs, setSelectedDs] = useState("");
+  const [logFilter, setLogFilter] = useState("all"); // Filter for Juice Shop logs
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
   const fetchDatasources = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/datasources`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setDatasources(res.data.datasources || []);
       if (res.data.datasources?.length) {
         setSelectedDs(res.data.datasources[0].id);
       }
     } catch (err) {
-      console.error('Error fetching datasources:', err);
+      console.error("Error fetching datasources:", err);
     }
   }, [token]);
 
-  const fetchDsLogs = useCallback(async (id) => {
-    setDsLoading(true);
-    try {
-      const res = await axios.get(`${API_URL}/datasources/${id}/logs`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDsLogs(res.data.logs || []);
-    } catch (err) {
-      console.error('Error fetching datasource logs:', err);
-    } finally {
-      setDsLoading(false);
-    }
-  }, [token]);
+  const fetchDsLogs = useCallback(
+    async (id) => {
+      setDsLoading(true);
+      try {
+        const res = await axios.get(`${API_URL}/datasources/${id}/logs`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDsLogs(res.data.logs || []);
+      } catch (err) {
+        console.error("Error fetching datasource logs:", err);
+      } finally {
+        setDsLoading(false);
+      }
+    },
+    [token]
+  );
 
   const fetchJuiceShopLogs = useCallback(async () => {
     setJsLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/logs/juice-shop?lines=200&filter=${logFilter}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(
+        `${API_URL}/logs/juice-shop?lines=200&filter=${logFilter}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setJuiceShopLogs(res.data.logs || []);
     } catch (err) {
-      console.error('Error fetching Juice Shop logs:', err);
+      console.error("Error fetching Juice Shop logs:", err);
     } finally {
       setJsLoading(false);
     }
@@ -61,12 +68,15 @@ export default function Logs({ token }) {
   const fetchAccessLogs = useCallback(async () => {
     setAccessLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/logs/juice-shop-access?lines=200`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(
+        `${API_URL}/logs/juice-shop-access?lines=200`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setAccessLogs(res.data.logs || []);
     } catch (err) {
-      console.error('Error fetching access logs:', err);
+      console.error("Error fetching access logs:", err);
     } finally {
       setAccessLoading(false);
     }
@@ -84,23 +94,29 @@ export default function Logs({ token }) {
   }, [selectedDs, fetchDsLogs]);
 
   useEffect(() => {
-    if (activeTab === 'juiceshop') {
+    if (activeTab === "juiceshop") {
       fetchJuiceShopLogs();
     }
   }, [activeTab, fetchJuiceShopLogs]);
 
   useEffect(() => {
-    if (activeTab === 'access') {
+    if (activeTab === "access") {
       fetchAccessLogs();
     }
   }, [activeTab, fetchAccessLogs]);
 
-  const currentLogs = activeTab === 'juiceshop' ? juiceShopLogs :
-    activeTab === 'access' ? accessLogs :
-      dsLogs;
-  const isLoading = activeTab === 'juiceshop' ? jsLoading :
-    activeTab === 'access' ? accessLoading :
-      dsLoading;
+  const currentLogs =
+    activeTab === "juiceshop"
+      ? juiceShopLogs
+      : activeTab === "access"
+      ? accessLogs
+      : dsLogs;
+  const isLoading =
+    activeTab === "juiceshop"
+      ? jsLoading
+      : activeTab === "access"
+      ? accessLoading
+      : dsLoading;
 
   const totalPages = Math.max(1, Math.ceil(currentLogs.length / pageSize));
   const currentPage = Math.min(Math.max(1, page), totalPages);
@@ -116,36 +132,36 @@ export default function Logs({ token }) {
       {/* Tab Navigation */}
       <div className="tab-navigation">
         <button
-          className={`tab-btn ${activeTab === 'datasource' ? 'active' : ''}`}
+          className={`tab-btn ${activeTab === "datasource" ? "active" : ""}`}
           onClick={() => {
-            setActiveTab('datasource');
+            setActiveTab("datasource");
             setPage(1);
           }}
         >
           Datasource Logs
         </button>
         <button
-          className={`tab-btn ${activeTab === 'juiceshop' ? 'active' : ''}`}
+          className={`tab-btn ${activeTab === "juiceshop" ? "active" : ""}`}
           onClick={() => {
-            setActiveTab('juiceshop');
+            setActiveTab("juiceshop");
             setPage(1);
           }}
         >
-          🧃 Juice Shop Logs
+          <Droplet size={16} style={{ marginRight: "4px" }} /> Juice Shop Logs
         </button>
         <button
-          className={`tab-btn ${activeTab === 'access' ? 'active' : ''}`}
+          className={`tab-btn ${activeTab === "access" ? "active" : ""}`}
           onClick={() => {
-            setActiveTab('access');
+            setActiveTab("access");
             setPage(1);
           }}
         >
-          🌐 HTTP Access Logs
+          <Globe size={16} style={{ marginRight: "4px" }} /> HTTP Access Logs
         </button>
       </div>
 
       {/* Datasource Logs Tab */}
-      {activeTab === 'datasource' && (
+      {activeTab === "datasource" && (
         <div className="logs-filter-row">
           <select
             className="editor-select"
@@ -158,12 +174,14 @@ export default function Logs({ token }) {
               </option>
             ))}
           </select>
-          <button className="btn" onClick={() => fetchDsLogs(selectedDs)}>Refresh</button>
+          <button className="btn" onClick={() => fetchDsLogs(selectedDs)}>
+            Refresh
+          </button>
         </div>
       )}
 
       {/* Juice Shop Logs Tab */}
-      {activeTab === 'juiceshop' && (
+      {activeTab === "juiceshop" && (
         <div className="logs-filter-row">
           <select
             className="editor-select"
@@ -172,24 +190,36 @@ export default function Logs({ token }) {
               setLogFilter(e.target.value);
               setPage(1);
             }}
-            style={{ marginRight: '10px' }}
+            style={{ marginRight: "10px" }}
           >
             <option value="all">All Logs</option>
-            <option value="access">🌐 Access Logs (HTTP Requests)</option>
-            <option value="info">ℹ️ Info Only</option>
-            <option value="error">❌ Errors Only</option>
+            <option value="access">Access Logs (HTTP Requests)</option>
+            <option value="info">Info Only</option>
+            <option value="error">Errors Only</option>
           </select>
-          <button className="btn" onClick={fetchJuiceShopLogs}>Refresh</button>
+          <button className="btn" onClick={fetchJuiceShopLogs}>
+            Refresh
+          </button>
         </div>
       )}
 
       {/* Access Logs Tab */}
-      {activeTab === 'access' && (
+      {activeTab === "access" && (
         <div className="logs-filter-row">
-          <span style={{ color: '#d8d9da', marginRight: '10px' }}>
-            📊 HTTP Requests to Juice Shop (Port 3001)
+          <span
+            style={{
+              color: "#d8d9da",
+              marginRight: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <BarChart3 size={16} /> HTTP Requests to Juice Shop (Port 3001)
           </span>
-          <button className="btn" onClick={fetchAccessLogs}>Refresh</button>
+          <button className="btn" onClick={fetchAccessLogs}>
+            Refresh
+          </button>
         </div>
       )}
 
@@ -206,8 +236,12 @@ export default function Logs({ token }) {
             ) : (
               visibleLogs.map((log, idx) => (
                 <div key={idx} className={`log-item log-${log.level}`}>
-                  <span className="log-time">{new Date(log.timestamp).toLocaleString()}</span>
-                  <span className="log-level">[{log.level?.toUpperCase() || 'INFO'}]</span>
+                  <span className="log-time">
+                    {new Date(log.timestamp).toLocaleString()}
+                  </span>
+                  <span className="log-level">
+                    [{log.level?.toUpperCase() || "INFO"}]
+                  </span>
                   <span className="log-msg">{log.message}</span>
                 </div>
               ))
@@ -223,7 +257,8 @@ export default function Logs({ token }) {
                 Prev
               </button>
               <span className="logs-count">
-                Page {currentPage} / {totalPages} ({visibleLogs.length}/{currentLogs.length})
+                Page {currentPage} / {totalPages} ({visibleLogs.length}/
+                {currentLogs.length})
               </span>
               <button
                 className="btn"
@@ -233,18 +268,24 @@ export default function Logs({ token }) {
                 Next
               </button>
             </div>
-            {activeTab === 'datasource' && (
-              <button className="btn danger" onClick={async () => {
-                try {
-                  await axios.delete(`${API_URL}/datasources/${selectedDs}/logs`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  setDsLogs([]);
-                  setPage(1);
-                } catch (err) {
-                  alert(err.response?.data?.error || 'Failed to clear logs');
-                }
-              }}>
+            {activeTab === "datasource" && (
+              <button
+                className="btn danger"
+                onClick={async () => {
+                  try {
+                    await axios.delete(
+                      `${API_URL}/datasources/${selectedDs}/logs`,
+                      {
+                        headers: { Authorization: `Bearer ${token}` },
+                      }
+                    );
+                    setDsLogs([]);
+                    setPage(1);
+                  } catch (err) {
+                    alert(err.response?.data?.error || "Failed to clear logs");
+                  }
+                }}
+              >
                 Clear Logs
               </button>
             )}

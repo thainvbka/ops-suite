@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { X } from "lucide-react";
 
 const TIME_RANGES = [
-  { label: 'Last 5 minutes', value: 'now-5m', to: 'now' },
-  { label: 'Last 15 minutes', value: 'now-15m', to: 'now' },
-  { label: 'Last 30 minutes', value: 'now-30m', to: 'now' },
-  { label: 'Last 1 hour', value: 'now-1h', to: 'now' },
-  { label: 'Last 3 hours', value: 'now-3h', to: 'now' },
-  { label: 'Last 6 hours', value: 'now-6h', to: 'now' },
-  { label: 'Last 12 hours', value: 'now-12h', to: 'now' },
-  { label: 'Last 24 hours', value: 'now-24h', to: 'now' }
+  { label: "Last 5 minutes", value: "now-5m", to: "now" },
+  { label: "Last 15 minutes", value: "now-15m", to: "now" },
+  { label: "Last 30 minutes", value: "now-30m", to: "now" },
+  { label: "Last 1 hour", value: "now-1h", to: "now" },
+  { label: "Last 3 hours", value: "now-3h", to: "now" },
+  { label: "Last 6 hours", value: "now-6h", to: "now" },
+  { label: "Last 12 hours", value: "now-12h", to: "now" },
+  { label: "Last 24 hours", value: "now-24h", to: "now" },
 ];
 
 function TimeRangePicker({ value, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
 
   const getCurrentLabel = () => {
-    const range = TIME_RANGES.find(r => r.value === value.from);
-    return range ? range.label : 'Custom Range';
+    const range = TIME_RANGES.find((r) => r.value === value.from);
+    return range ? range.label : "Custom Range";
   };
 
   const selectRange = (range) => {
@@ -26,7 +27,7 @@ function TimeRangePicker({ value, onChange }) {
 
   return (
     <div className="time-range-picker">
-      <button 
+      <button
         className="time-range-btn"
         onClick={() => setShowPicker(!showPicker)}
       >
@@ -37,15 +38,19 @@ function TimeRangePicker({ value, onChange }) {
         <div className="time-range-dropdown">
           <div className="time-range-header">
             <h4>Time Range</h4>
-            <button onClick={() => setShowPicker(false)}>✕</button>
+            <button onClick={() => setShowPicker(false)}>
+              <X size={20} />
+            </button>
           </div>
-          
+
           <div className="time-range-options">
             <h5>Quick ranges</h5>
-            {TIME_RANGES.map(range => (
+            {TIME_RANGES.map((range) => (
               <div
                 key={range.value}
-                className={`time-range-option ${value.from === range.value ? 'active' : ''}`}
+                className={`time-range-option ${
+                  value.from === range.value ? "active" : ""
+                }`}
                 onClick={() => selectRange(range)}
               >
                 {range.label}
