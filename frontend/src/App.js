@@ -622,7 +622,7 @@ function App() {
             <div className="empty-state">
               <h2>No dashboard selected</h2>
               <p>Create a new dashboard to get started</p>
-              <button className="btn-primary" onClick={createDashboard}>
+              <button className="btn-primary" onClick={() => setShowCreateDashboardModal(true)}>
                 + Create Dashboard
               </button>
             </div>

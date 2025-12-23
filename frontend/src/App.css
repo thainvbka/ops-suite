@@ -30,14 +30,12 @@ body {
 .login-background {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    #0f172a 0%,
-    #1e1b4b 25%,
-    #312e81 50%,
-    #1e3a8a 75%,
-    #0f172a 100%
-  );
+  background: linear-gradient(135deg,
+      #0f172a 0%,
+      #1e1b4b 25%,
+      #312e81 50%,
+      #1e3a8a 75%,
+      #0f172a 100%);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   z-index: 0;
@@ -94,6 +92,7 @@ body {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translate(0, 0) rotate(0deg);
@@ -158,6 +157,7 @@ body {
 }
 
 @keyframes logoPulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -293,7 +293,7 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.input-wrapper input:focus + .input-icon,
+.input-wrapper input:focus+.input-icon,
 .input-wrapper:focus-within .input-icon {
   color: #3b82f6;
 }
@@ -1028,11 +1028,9 @@ body {
 
 /* Panel */
 .panel {
-  background: linear-gradient(
-    135deg,
-    rgba(31, 31, 35, 0.95) 0%,
-    rgba(31, 31, 35, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(31, 31, 35, 0.95) 0%,
+      rgba(31, 31, 35, 0.9) 100%);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -1756,11 +1754,9 @@ body {
 }
 
 .channel-card {
-  background: linear-gradient(
-    135deg,
-    rgba(31, 31, 35, 0.95) 0%,
-    rgba(31, 31, 35, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(31, 31, 35, 0.95) 0%,
+      rgba(31, 31, 35, 0.9) 100%);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -2030,11 +2026,9 @@ body {
   justify-content: space-between;
   padding: 24px 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 100%);
 }
 
 .modal-title-section h3 {
@@ -2218,11 +2212,9 @@ body {
 }
 
 .datasource-card.selected {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.15),
-    rgba(59, 130, 246, 0.08)
-  );
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.15),
+      rgba(59, 130, 246, 0.08));
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2),
     0 8px 24px rgba(59, 130, 246, 0.25);
@@ -2357,11 +2349,9 @@ body {
 }
 
 .interval-card.selected {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.15),
-    rgba(59, 130, 246, 0.08)
-  );
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.15),
+      rgba(59, 130, 246, 0.08));
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
@@ -2400,11 +2390,9 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.2),
-    rgba(16, 185, 129, 0.15)
-  );
+  background: linear-gradient(135deg,
+      rgba(16, 185, 129, 0.2),
+      rgba(16, 185, 129, 0.15));
   border: 2px solid rgba(16, 185, 129, 0.3);
   border-radius: 10px;
   color: #10b981;
@@ -2415,11 +2403,9 @@ body {
 }
 
 .test-query-btn:hover:not(:disabled) {
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.25),
-    rgba(16, 185, 129, 0.2)
-  );
+  background: linear-gradient(135deg,
+      rgba(16, 185, 129, 0.25),
+      rgba(16, 185, 129, 0.2));
   border-color: #10b981;
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
@@ -2867,11 +2853,9 @@ body {
 
 .challenge-card.solved {
   border-color: #10b981;
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.05) 0%,
-    #2c2c2f 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(16, 185, 129, 0.05) 0%,
+      #2c2c2f 100%);
 }
 
 .challenge-card.solved::before {
@@ -3027,11 +3011,9 @@ body {
   align-items: flex-start;
   padding: 32px 32px 24px;
   border-bottom: 1px solid #2c2c2f;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 130, 246, 0.05) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(59, 130, 246, 0.05) 0%,
+      transparent 100%);
 }
 
 .account-info {
@@ -3150,7 +3132,7 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.password-input-wrapper input:focus + .input-icon,
+.password-input-wrapper input:focus+.input-icon,
 .password-input-wrapper:focus-within .input-icon {
   color: #3b82f6;
 }
@@ -3443,11 +3425,9 @@ body {
   align-items: flex-start;
   padding: 28px 32px;
   border-bottom: 1px solid #2c2c2f;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 130, 246, 0.05) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(59, 130, 246, 0.05) 0%,
+      transparent 100%);
 }
 
 .header-content {
@@ -3584,8 +3564,8 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.input-with-icon input:focus ~ .input-icon,
-.input-with-icon textarea:focus ~ .input-icon,
+.input-with-icon input:focus~.input-icon,
+.input-with-icon textarea:focus~.input-icon,
 .input-with-icon:focus-within .input-icon {
   color: #3b82f6;
 }
@@ -3806,6 +3786,7 @@ body {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -4015,11 +3996,9 @@ body {
   align-items: flex-start;
   padding: 28px 32px;
   border-bottom: 1px solid #2c2c2f;
-  background: linear-gradient(
-    180deg,
-    rgba(139, 92, 246, 0.05) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(139, 92, 246, 0.05) 0%,
+      transparent 100%);
 }
 
 .add-panel-header .panel-icon {
@@ -4045,11 +4024,9 @@ body {
 
 /* Enhanced Preset Preview Card */
 .preset-preview {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.08) 0%,
-    rgba(139, 92, 246, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.08) 0%,
+      rgba(139, 92, 246, 0.08) 100%);
   border: 1px solid rgba(139, 92, 246, 0.25);
   border-radius: 16px;
   padding: 20px;
@@ -4192,7 +4169,7 @@ body {
   flex: 1;
 }
 
-.add-panel-header .header-content > div {
+.add-panel-header .header-content>div {
   display: flex;
   flex-direction: column;
   gap: 4px;

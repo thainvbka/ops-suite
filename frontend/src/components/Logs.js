@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_URL } from "../api";
-import { Droplet, Globe, Info, XCircle, BarChart3 } from "lucide-react";
+import { Droplet, Globe, BarChart3 } from "lucide-react";
 
 export default function Logs({ token }) {
   const [activeTab, setActiveTab] = useState("datasource");
@@ -109,14 +109,14 @@ export default function Logs({ token }) {
     activeTab === "juiceshop"
       ? juiceShopLogs
       : activeTab === "access"
-      ? accessLogs
-      : dsLogs;
+        ? accessLogs
+        : dsLogs;
   const isLoading =
     activeTab === "juiceshop"
       ? jsLoading
       : activeTab === "access"
-      ? accessLoading
-      : dsLoading;
+        ? accessLoading
+        : dsLoading;
 
   const totalPages = Math.max(1, Math.ceil(currentLogs.length / pageSize));
   const currentPage = Math.min(Math.max(1, page), totalPages);

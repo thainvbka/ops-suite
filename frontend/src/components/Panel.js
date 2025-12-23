@@ -95,44 +95,44 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
   const effectiveMetric = panel.metric || primaryTarget.metric || 'cpu_usage';
   const effectiveQuery = panel.query || primaryTarget.query || '';
 
-  const normalizeResponseData = (responseData) => {
+  const normalizeResponseData = React.useCallback((responseData) => {
+    const sanitize = (arr) => {
+      return arr
+        .map((item) => {
+          if (!item) return null;
+          const ts =
+            item.timestamp ||
+            item.time ||
+            item.ts ||
+            item.date ||
+            item.Time ||
+            item.TS;
+          const val =
+            item.value !== undefined
+              ? item.value
+              : item.Value !== undefined
+                ? item.Value
+                : item.val;
+          const parsedTs = ts ? new Date(ts) : null;
+          if (!parsedTs || Number.isNaN(parsedTs.getTime())) return null;
+          return {
+            ...item,
+            timestamp: parsedTs.toISOString(),
+            value: typeof val === 'string' ? parseFloat(val) : val
+          };
+        })
+        .filter(Boolean);
+    };
+
     if (!responseData) return [];
-    if (Array.isArray(responseData.data)) return sanitizeData(responseData.data);
+    if (Array.isArray(responseData.data)) return sanitize(responseData.data);
 
     if (Array.isArray(responseData.series) && responseData.series.length > 0) {
-      return sanitizeData(responseData.series[0].data || []);
+      return sanitize(responseData.series[0].data || []);
     }
 
     return [];
-  };
-
-  const sanitizeData = (arr) => {
-    return arr
-      .map((item) => {
-        if (!item) return null;
-        const ts =
-          item.timestamp ||
-          item.time ||
-          item.ts ||
-          item.date ||
-          item.Time ||
-          item.TS;
-        const val =
-          item.value !== undefined
-            ? item.value
-            : item.Value !== undefined
-              ? item.Value
-              : item.val;
-        const parsedTs = ts ? new Date(ts) : null;
-        if (!parsedTs || Number.isNaN(parsedTs.getTime())) return null;
-        return {
-          ...item,
-          timestamp: parsedTs.toISOString(),
-          value: typeof val === 'string' ? parseFloat(val) : val
-        };
-      })
-      .filter(Boolean);
-  };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -172,7 +172,9 @@ function Panel({ panel, timeRange, refreshTick, onRemove, onEdit, onUpdate, toke
     effectiveQuery,
     timeRange.from,
     timeRange.to,
-    refreshTick
+    refreshTick,
+    normalizeResponseData,
+    token
   ]);
 
   const handleSave = () => {

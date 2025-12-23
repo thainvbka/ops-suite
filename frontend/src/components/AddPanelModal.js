@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { METRIC_PRESETS } from "../metricPresets";
-import { Activity, Droplet, BarChart3, X, Plus } from "lucide-react";
+import { Activity, Droplet, X, Plus } from "lucide-react";
 
 export default function AddPanelModal({ isOpen, onClose, onCreate }) {
   const [datasource, setDatasource] = useState("prometheus");
@@ -55,18 +55,6 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
       console.error("Error creating panel:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getDatasourceIcon = (ds) => {
-    const iconProps = { size: 16 };
-    switch (ds) {
-      case "prometheus":
-        return <Activity {...iconProps} />;
-      case "juiceShop":
-        return <Droplet {...iconProps} />;
-      default:
-        return <BarChart3 {...iconProps} />;
     }
   };
 
@@ -131,9 +119,8 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
             <div className="datasource-selector">
               <button
                 type="button"
-                className={`datasource-option ${
-                  datasource === "prometheus" ? "active" : ""
-                }`}
+                className={`datasource-option ${datasource === "prometheus" ? "active" : ""
+                  }`}
                 onClick={() => {
                   setDatasource("prometheus");
                   const prometheusPresets = METRIC_PRESETS["prometheus"] || [];
@@ -147,9 +134,8 @@ export default function AddPanelModal({ isOpen, onClose, onCreate }) {
               </button>
               <button
                 type="button"
-                className={`datasource-option ${
-                  datasource === "juiceShop" ? "active" : ""
-                }`}
+                className={`datasource-option ${datasource === "juiceShop" ? "active" : ""
+                  }`}
                 onClick={() => {
                   setDatasource("juiceShop");
                   const juiceShopPresets = METRIC_PRESETS["juiceShop"] || [];
